@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Nick Drum Beat Maker (4/8/16)</title>
+<style>
+  :root { --bg:#0b0c10; --card:#111217; --muted:#9aa0a6; --accent:#22c55e; --danger:#ef4444; --border:#20232b; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:#fff;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Noto Sans,Helvetica,Arial}
+  .container{max-width:1100px;margin:0 auto;padding:24px}
+  .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+  h1{font-size:32px; line-height:1.1; margin:0; letter-spacing:0.3px;
+     background: linear-gradient(90deg,#fff,#22c55e 60%,#a7f3d0);
+     -webkit-background-clip:text; background-clip:text; color:transparent;}
+  .muted{color:var(--muted);font-size:12px}
+  .btn{padding:10px 16px;border-radius:14px;border:1px solid var(--border);background:var(--accent);color:#051b0d;font-weight:700;cursor:pointer}
+  .btn.stop{background:var(--danger);color:#fff}
+  .btn.clear{background:#1f2937;color:#fff}
+  .tabs{display:flex;gap:12px;margin-top:12px}
+  .tab{flex:1;padding:12px;border-radius:12px;background:#1f2937;color:#e5e7eb;cursor:pointer;text-align:center;border:1px solid var(--border)}
+  .tab.active{background:#0f172a; box-shadow: 0 0 0 2px #334155 inset}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:12px}
+  .grid{display:grid;gap:12px}
+  .grid.cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .tile{background:#0f1117;border:1px solid var(--border);border-radius:14px;padding:10px;cursor:pointer;transition:transform .08s ease}
+  .tile:hover{transform:translateY(-2px)}
+  .tile .top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+  .tile .id{font-weight:800;font-size:14px}
+  .tile .name{font-size:12px;color:var(--muted)}
+  .tile img{width:100%;height:120px;display:block;object-fit:contain;border-radius:10px;background:#fff;border:1px solid #2b2f3a}
+  .selection{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .slot{min-height:140px;border:1px dashed var(--border);border-radius:12px;display:flex;align-items:center;justify-content:center;padding:6px;background:#0f1117}
+  .slot.filled{border-style:solid}
+  .slot img{width:100%;height:120px;object-fit:contain;border-radius:8px;background:#fff;border:1px solid #2b2f3a}
+  input[type=range]{accent-color:var(--accent)}
+  .value{width:56px;text-align:right;font-feature-settings:'tnum';font-variant-numeric:tabular-nums}
+  .warn{color:#fbbf24;font-size:12px;margin-left:6px}
+  .note{font-size:12px;color:var(--muted);margin-top:8px}
+
+  /* continuous highlight (no blink) */
+  .slot.playing{
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 0 2px var(--accent) inset, 0 0 16px rgba(34,197,94,0.55);
+    transition: box-shadow .08s ease, border-color .08s ease;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div style="text-align:center; margin-bottom: 12px;">
+    <h1>Nick Drum Beat Maker</h1>
+    <div class="muted" id="subtitle">Pick 1–4 tiles (duplicates allowed). Start to loop only the selected tiles. Clear to reset selection. BPM 60–200.</div>
+  </div>
+
+  <div class="row">
+    <button id="startBtn" class="btn">Start</button>
+    <button id="stopBtn" class="btn stop">Stop</button>
+    <button id="clearBtn" class="btn clear">Clear Selection</button>
+    <div class="row">
+      <label for="bpm" class="muted">BPM</label>
+      <input id="bpm" type="range" min="60" max="200" value="100" />
+      <div id="bpmVal" class="value muted">100</div>
+      <div class="row" style="gap:6px;margin-left:10px">
+        <button type="button" class="btn clear" data-step="-5">-5</button>
+        <button type="button" class="btn clear" data-step="-1">-1</button>
+        <button type="button" class="btn clear" data-step="1">+1</button>
+        <button type="button" class="btn clear" data-step="5">+5</button>
+      </div>
+    </div>
+    <div id="status" class="warn"></div>
+  </div>
+
+  <div class="card" style="margin-top:12px;">
+    <div class="selection" id="selection">
+      <div class="slot" id="slot0"><span class="muted">Slot 1</span></div>
+      <div class="slot" id="slot1"><span class="muted">Slot 2</span></div>
+      <div class="slot" id="slot2"><span class="muted">Slot 3</span></div>
+      <div class="slot" id="slot3"><span class="muted">Slot 4</span></div>
+    </div>
+    <div class="note" id="note"></div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" data-mode="4">4 Beat</div>
+    <div class="tab" data-mode="8">8 Beat</div>
+    <div class="tab" data-mode="16">16 Beat</div>
+  </div>
+
+  <h2 style="margin-top:18px; font-size:18px;">Tiles</h2>
+  <div class="grid cols-3" id="library"></div>
+</div>
+
+<script>
+// ---- Config per mode ----
+const MODES = {
+  "4":  { title:"4 Beat",  folder:"Images/4beat",  STEPS_PER_BEAT:4, TILE_STEPS:4,
+          note:"Each tile is 1 beat (4 sixteenth notes). 4 tiles = 1 bar." },
+  "8":  { title:"8 Beat",  folder:"Images/8beat",  STEPS_PER_BEAT:4, TILE_STEPS:8,
+          note:"Each tile is 2 beats (4 eighth notes). 4 tiles = 2 bars." },
+  "16": { title:"16 Beat", folder:"Images/16beat", STEPS_PER_BEAT:4, TILE_STEPS:8,
+          note:"Each tile is 2 beats (8 sixteenth notes). 4 tiles = 2 bars (4/4)." }
+};
+
+// Simple patterns (1~9) per mode; img path differs, steps are basic but musical.
+function buildPatterns(folder, TILE_STEPS){
+  // base hats on all steps; vary kick (bd) for demo; snare on backbeat(s)
+  const PATTERNS = [];
+  const bdSets = [
+    [], [0],[2],[TILE_STEPS/2|0],[TILE_STEPS-2|0],[0,2],[0,TILE_STEPS-2|0],[0,TILE_STEPS/2|0],[2,TILE_STEPS-2|0]
+  ];
+  for(let i=1;i<=9;i++){
+    const bd = bdSets[(i-1)%bdSets.length].map(x=>Math.max(0, Math.min(TILE_STEPS-1, x)));
+    const sd = TILE_STEPS===4 ? [2] : [4]; // backbeat
+    const hh = Array.from({length:TILE_STEPS}, (_,k)=>k);
+    PATTERNS.push({ id:i, name:`Pattern ${i}`, img:`${folder}/${i}.png`, hh, bd, sd });
+  }
+  return PATTERNS;
+}
+
+// ---- Audio Engine ----
+let audioCtx, masterGain, reverb;
+function ensureCtx(){
+  if(!audioCtx){
+    const AC = window.AudioContext || window.webkitAudioContext;
+    audioCtx = new AC();
+    masterGain = audioCtx.createGain(); masterGain.gain.value = 0.9; masterGain.connect(audioCtx.destination);
+    reverb = audioCtx.createConvolver(); reverb.buffer = createReverbIR(audioCtx, 1.2, 2.0); reverb.connect(masterGain);
+  }
+  return audioCtx;
+}
+function createReverbIR(ctx, seconds=1.2, decay=2.0){
+  const rate=ctx.sampleRate, length=Math.floor(rate*seconds);
+  const buf=ctx.createBuffer(2,length,rate);
+  for(let ch=0;ch<2;ch++){
+    const d=buf.getChannelData(ch);
+    for(let i=0;i<length;i++){ const t=i/length; d[i]=(Math.random()*2-1)*Math.pow(1-t,decay); }
+  }
+  return buf;
+}
+function playKick(time){
+  const ctx=ensureCtx();
+  const osc=ctx.createOscillator(); osc.type='sine';
+  osc.frequency.setValueAtTime(150,time); osc.frequency.exponentialRampToValueAtTime(50,time+0.12);
+  const g=ctx.createGain(); g.gain.setValueAtTime(1.0,time); g.gain.exponentialRampToValueAtTime(0.001,time+0.14);
+  osc.connect(g); g.connect(masterGain); g.connect(reverb); osc.start(time); osc.stop(time+0.15);
+}
+function playSnare(time){
+  const ctx=ensureCtx();
+  const nb=ctx.createBuffer(1, ctx.sampleRate*0.2, ctx.sampleRate);
+  const d=nb.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+  const src=ctx.createBufferSource(); src.buffer=nb;
+  const bp=ctx.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=1800; bp.Q.value=0.6;
+  const g=ctx.createGain(); g.gain.setValueAtTime(0.7,time); g.gain.exponentialRampToValueAtTime(0.001,time+0.18);
+  src.connect(bp).connect(g); g.connect(masterGain); g.connect(reverb); src.start(time); src.stop(time+0.2);
+}
+function playHat(time){
+  const ctx=ensureCtx();
+  const nb=ctx.createBuffer(1, ctx.sampleRate*0.05, ctx.sampleRate);
+  const d=nb.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+  const src=ctx.createBufferSource(); src.buffer=nb;
+  const hp=ctx.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=8000; hp.Q.value=0.7;
+  const g=ctx.createGain(); g.gain.setValueAtTime(0.28,time); g.gain.exponentialRampToValueAtTime(0.001,time+0.05);
+  src.connect(hp).connect(g); g.connect(masterGain); g.connect(reverb); src.start(time); src.stop(time+0.08);
+}
+
+// ---- Sequencer (mode-aware) ----
+let MODE = "4";
+let CONFIG = MODES[MODE];
+let PATTERNS = buildPatterns(CONFIG.folder, CONFIG.TILE_STEPS);
+
+let isPlaying=false, nextNoteTime=0, currentStep=0, lookaheadTimer=null;
+
+const libEl = document.getElementById('library');
+const selectionEl = document.getElementById('selection');
+const statusEl = document.getElementById('status');
+const bpm = document.getElementById('bpm');
+const bpmVal = document.getElementById('bpmVal');
+const noteEl = document.getElementById('note');
+const subtitle = document.getElementById('subtitle');
+
+const slots=[document.getElementById('slot0'),document.getElementById('slot1'),
+             document.getElementById('slot2'),document.getElementById('slot3')];
+let selected=[null,null,null,null]; // store pattern id
+
+function bpmToStepSec(){ return 60 / (parseInt(bpm.value,10) * CONFIG.STEPS_PER_BEAT); }
+
+function buildPlan(){
+  const chosen = selected.filter(id=>id!==null).map(id=>PATTERNS.find(p=>p.id===id));
+  if(chosen.length===0) return null;
+  const steps=[];
+  chosen.forEach(p=>{
+    for(let i=0;i<CONFIG.TILE_STEPS;i++){
+      const arr=[];
+      if(p.hh.includes(i)) arr.push('hh');
+      if(p.bd.includes(i)) arr.push('bd');
+      if(p.sd.includes(i)) arr.push('sd');
+      steps.push(arr);
+    }
+  });
+  return { steps, tileCount: chosen.length };
+}
+
+function updateSlotHighlight(activeIdx){
+  for(let i=0;i<4;i++){
+    const el=slots[i];
+    if(i===activeIdx) el.classList.add('playing'); else el.classList.remove('playing');
+  }
+}
+function clearSlotHighlight(){ slots.forEach(el=>el.classList.remove('playing')); }
+
+function schedule(){
+  const ctx=ensureCtx();
+  const plan = buildPlan(); if(!plan) return;
+  const stepDur = bpmToStepSec();
+  while(nextNoteTime < ctx.currentTime + 0.12){
+    const st = plan.steps[currentStep % plan.steps.length];
+    const tileIdx = Math.floor(currentStep / CONFIG.TILE_STEPS) % Math.max(1, plan.tileCount);
+    // play
+    if(st.includes('hh')) playHat(nextNoteTime);
+    if(st.includes('bd')) playKick(nextNoteTime);
+    if(st.includes('sd')) playSnare(nextNoteTime);
+    // UI
+    updateSlotHighlight(tileIdx);
+    nextNoteTime += stepDur;
+    currentStep = (currentStep + 1) % plan.steps.length;
+  }
+}
+
+function start(){
+  if(isPlaying) return;
+  if(selected.every(id=>id===null)){ statusEl.textContent='Pick at least 1 tile.'; return; }
+  ensureCtx().resume();
+  isPlaying=true; nextNoteTime=ensureCtx().currentTime+0.05; currentStep=0;
+  lookaheadTimer = setInterval(schedule, 25);
+  statusEl.textContent='';
+}
+function stop(){
+  clearSlotHighlight();
+  if(lookaheadTimer) clearInterval(lookaheadTimer); lookaheadTimer=null; isPlaying=false;
+}
+
+function renderLibrary(){
+  libEl.innerHTML='';
+  PATTERNS.forEach(p=>{
+    const div=document.createElement('div'); div.className='tile'; div.tabIndex=0;
+    div.innerHTML = `
+      <div class="top"><span class="id">#${p.id}</span><span class="name">${p.name}</span></div>
+      <img src="${p.img}" alt="${p.name}">
+    `;
+    div.addEventListener('click', ()=>addToSelection(p.id));
+    libEl.appendChild(div);
+  });
+}
+
+function addToSelection(id){
+  // find first empty slot; if full, replace last
+  const idx = selected.findIndex(x=>x===null);
+  if(idx!==-1) selected[idx]=id;
+  else selected[3]=id;
+  renderSelection();
+}
+
+function renderSelection(){
+  clearSlotHighlight();
+  for(let i=0;i<4;i++){
+    const el=slots[i]; el.innerHTML='';
+    const id=selected[i];
+    if(id===null){
+      el.classList.remove('filled');
+      el.innerHTML = `<span class="muted">Slot ${i+1}</span>`;
+    }else{
+      const p = PATTERNS.find(x=>x.id===id);
+      el.classList.add('filled');
+      el.innerHTML = `<img src="${p.img}" alt="Pattern ${id}">`;
+    }
+  }
+}
+
+// Mode switching
+function setMode(m){
+  if(isPlaying) stop();
+  MODE = m; CONFIG = MODES[MODE];
+  PATTERNS = buildPatterns(CONFIG.folder, CONFIG.TILE_STEPS);
+  selected=[null,null,null,null];
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.mode===MODE));
+  noteEl.textContent = CONFIG.note;
+  renderLibrary();
+  renderSelection();
+}
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click', ()=>setMode(t.dataset.mode)));
+
+// Controls
+document.getElementById('startBtn').addEventListener('click', start);
+document.getElementById('stopBtn').addEventListener('click', stop);
+document.getElementById('clearBtn').addEventListener('click', ()=>{ selected=[null,null,null,null]; renderSelection(); });
+bpm.addEventListener('input', ()=>{ bpmVal.textContent=bpm.value; });
+document.querySelectorAll('button[data-step]').forEach(btn=>btn.addEventListener('click', ()=>{
+  const step=parseInt(btn.dataset.step,10);
+  let v=parseInt(bpm.value,10)+step; v=Math.max(60, Math.min(200, v));
+  bpm.value=v; bpmVal.textContent=v;
+}));
+
+// Keyboard: space = start/stop, left/right = BPM +/-1
+document.addEventListener('keydown', (e)=>{
+  if(e.target && (e.target.tagName==='INPUT' || e.target.tagName==='TEXTAREA')) return;
+  if(e.code==='Space'){ e.preventDefault(); isPlaying?stop():start(); }
+  else if(e.code==='ArrowLeft'){ let v=Math.max(60, parseInt(bpm.value,10)-1); bpm.value=v; bpmVal.textContent=v; }
+  else if(e.code==='ArrowRight'){ let v=Math.min(200, parseInt(bpm.value,10)+1); bpm.value=v; bpmVal.textContent=v; }
+});
+
+// Init
+setMode("4");
+</script>
+</body>
+</html>

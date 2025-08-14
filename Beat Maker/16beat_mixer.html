@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>Nick Drum 16 Beat Mixer</title>
+<style>
+  :root { --bg:#0b0c10; --card:#111217; --muted:#9aa0a6; --accent:#22c55e; --danger:#ef4444; --border:#20232b; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:#fff;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Noto Sans,Helvetica,Arial}
+  .container{max-width:1100px;margin:0 auto;padding:24px}
+  h1{font-size:22px;margin:0 0 8px 0}
+  .muted{color:var(--muted);font-size:12px}
+  .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+  .controls{gap:16px;margin-top:12px}
+  .btn{padding:10px 16px;border-radius:14px;border:1px solid var(--border);background:var(--accent);color:#051b0d;font-weight:700;cursor:pointer}
+  .btn.stop{background:var(--danger);color:#fff}
+  .btn.clear{background:#1f2937;color:#fff}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:12px}
+  .grid{display:grid;gap:12px}
+  .grid.cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .tile{background:#0f1117;border:1px solid var(--border);border-radius:14px;padding:10px;cursor:pointer;transition:transform .08s ease}
+  .tile:hover{transform:translateY(-2px)}
+  .tile .top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+  .tile .id{font-weight:800;font-size:14px}
+  .tile .name{font-size:12px;color:var(--muted)}
+  .tile img{width:100%;height:120px;display:block;object-fit:contain;border-radius:10px;background:#fff;border:1px solid #2b2f3a}
+  .selection{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .slot{min-height:140px;border:1px dashed var(--border);border-radius:12px;display:flex;align-items:center;justify-content:center;padding:6px;background:#0f1117}
+  .slot.filled{border-style:solid}
+  .slot img{width:100%;height:120px;object-fit:contain;border-radius:8px;background:#fff;border:1px solid #2b2f3a}
+  input[type=range]{accent-color:var(--accent)}
+  .value{width:56px;text-align:right;font-feature-settings:'tnum';font-variant-numeric:tabular-nums}
+  .warn{color:#fbbf24;font-size:12px;margin-left:6px}
+  .note{font-size:12px;color:var(--muted);margin-top:8px}
+  .fallback{background:#111;color:#fca5a5;border:1px solid #7f1d1d;padding:8px;border-radius:8px;font-size:12px}
+
+.tile {
+  transition: transform 0.1s ease-in-out;
+}
+.tile:active {
+  transform: scale(1.05);
+}
+
+
+  .bpm-steps{display:flex;gap:6px;margin-left:10px}
+  .bpm-step{padding:6px 10px;border-radius:10px;border:1px solid var(--border);background:#1f2937;color:#e5e7eb;cursor:pointer;font-size:12px}
+  .bpm-step:hover{transform:translateY(-1px)}
+
+</style>
+</head>
+<body>
+<div class="container">
+<div style="text-align:center; margin-bottom: 12px;">
+<h1 style="font-size:32px; line-height:1.1; margin:0; letter-spacing:0.3px;
+                 background: linear-gradient(90deg,#fff,#22c55e 60%,#a7f3d0);
+                 -webkit-background-clip:text; background-clip:text; color:transparent;">Nick Drum 16 Beat Mixer</h1>
+<div class="muted" style="margin-top:6px;">Pick 1–4 tiles (duplicates allowed). Start to loop only the selected tiles. Clear to reset selection. BPM 60–200.</div>
+</div><div class="fallback" id="imgError" style="display:none;margin-top:8px;">Image decode failed. Please re-download the HTML or open in a different browser.</div>
+<div class="row controls">
+<button class="btn" id="startBtn">Start</button>
+<button class="btn stop" id="stopBtn">Stop</button>
+<button class="btn clear" id="clearBtn">Clear Selection</button>
+<div class="row">
+<label class="muted" for="bpm">BPM</label>
+<input id="bpm" max="200" min="60" type="range" value="100"/>
+<div class="value muted" id="bpmVal">100</div>
+<div class="bpm-steps">
+<button class="bpm-step" data-step="-5" type="button">-5</button>
+<button class="bpm-step" data-step="-1" type="button">-1</button>
+<button class="bpm-step" data-step="1" type="button">+1</button>
+<button class="bpm-step" data-step="5" type="button">+5</button>
+</div>
+</div>
+<div class="warn" id="status"></div>
+</div>
+<div class="card" style="margin-top:12px;">
+<div class="selection" id="selection">
+<div class="slot" id="slot0"><span class="muted">Slot 1</span></div>
+<div class="slot" id="slot1"><span class="muted">Slot 2</span></div>
+<div class="slot" id="slot2"><span class="muted">Slot 3</span></div>
+<div class="slot" id="slot3"><span class="muted">Slot 4</span></div>
+</div>
+<div class="note">Each tile is 2 beats (8 sixteenth notes). 4 tiles = 2 bars (4/4).</div>
+</div>
+<h2 style="margin-top:18px; font-size:18px;">Tiles</h2>
+<div class="grid cols-3" id="library"></div>
+</div>
+<script>
+// 16th-note engine
+const PATTERNS = [
+  { id:1, name:'Pattern 1', img:'images/16beat/1.png', hh:[0,1,2,3,4,5,6,7], bd:[], sd:[4] },
+  { id:2, name:'Pattern 2', img:'images/16beat/2.png', hh:[0,1,2,3,4,5,6,7], bd:[0], sd:[4] },
+  { id:3, name:'Pattern 3', img:'images/16beat/3.png', hh:[0,1,2,3,4,5,6,7], bd:[2], sd:[4] },
+  { id:4, name:'Pattern 4', img:'images/16beat/4.png', hh:[0,1,2,3,4,5,6,7], bd:[4], sd:[4] },
+  { id:5, name:'Pattern 5', img:'images/16beat/5.png', hh:[0,1,2,3,4,5,6,7], bd:[6], sd:[4] },
+  { id:6, name:'Pattern 6', img:'images/16beat/6.png', hh:[0,1,2,3,4,5,6,7], bd:[0, 2], sd:[4] },
+  { id:7, name:'Pattern 7', img:'images/16beat/7.png', hh:[0,1,2,3,4,5,6,7], bd:[0, 6], sd:[4] },
+  { id:8, name:'Pattern 8', img:'images/16beat/8.png', hh:[0,1,2,3,4,5,6,7], bd:[0, 4], sd:[4] },
+  { id:9, name:'Pattern 9', img:'images/16beat/9.png', hh:[0,1,2,3,4,5,6,7], bd:[2, 6], sd:[4] }
+];
+
+// WebAudio drum synth
+let audioCtx, masterGain, reverb;
+function ensureCtx(){
+  if(!audioCtx){
+    const AC = window.AudioContext || window.webkitAudioContext;
+    audioCtx = new AC();
+    masterGain = audioCtx.createGain(); masterGain.gain.value = 0.9; masterGain.connect(audioCtx.destination);
+    reverb = audioCtx.createConvolver(); reverb.buffer = createReverbIR(audioCtx, 1.4, 2.4); reverb.connect(masterGain);
+  }
+  return audioCtx;
+}
+function createReverbIR(ctx, seconds=1.4, decay=2.4){
+  const rate = ctx.sampleRate, length = Math.floor(rate*seconds);
+  const impulse = ctx.createBuffer(2, length, rate);
+  for(let ch=0; ch<2; ch++){ 
+    const data = impulse.getChannelData(ch);
+    for(let i=0;i<length;i++){ 
+      const t=i/length; data[i]=(Math.random()*2-1)*Math.pow(1-t,decay);
+    }
+  }
+  return impulse;
+}
+function playKick(time){
+  const ctx = ensureCtx();
+  const body = ctx.createOscillator(); body.type='sine';
+  body.frequency.setValueAtTime(150, time); body.frequency.exponentialRampToValueAtTime(50, time+0.12);
+  const bg = ctx.createGain(); bg.gain.setValueAtTime(1.0,time); bg.gain.exponentialRampToValueAtTime(0.001,time+0.14);
+  body.connect(bg);
+
+  const mix = ctx.createGain(); mix.gain.value=1.0;
+  bg.connect(mix); mix.connect(reverb); mix.connect(masterGain);
+  body.start(time); body.stop(time+0.15);
+  }
+function playSnare(time){
+  const ctx = ensureCtx();
+  const noiseBuf = ctx.createBuffer(1, ctx.sampleRate*0.2, ctx.sampleRate);
+  const data = noiseBuf.getChannelData(0); for(let i=0;i<data.length;i++) data[i]=Math.random()*2-1;
+  const nsrc = ctx.createBufferSource(); nsrc.buffer=noiseBuf;
+  const bp = ctx.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=1800; bp.Q.value=0.6;
+  const ng = ctx.createGain(); ng.gain.setValueAtTime(0.7,time); ng.gain.exponentialRampToValueAtTime(0.001, time+0.18);
+  nsrc.connect(bp).connect(ng); ng.connect(reverb); ng.connect(masterGain);
+  nsrc.start(time); nsrc.stop(time+0.2);
+}
+function playHat(time){
+  const ctx = ensureCtx();
+  const noiseBuf = ctx.createBuffer(1, ctx.sampleRate*0.05, ctx.sampleRate);
+  const data = noiseBuf.getChannelData(0); for(let i=0;i<data.length;i++) data[i]=Math.random()*2-1;
+  const src = ctx.createBufferSource(); src.buffer=noiseBuf;
+  const hp = ctx.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=8000; hp.Q.value=0.7;
+  const g = ctx.createGain(); g.gain.setValueAtTime(0.28, time); g.gain.exponentialRampToValueAtTime(0.001, time+0.05);
+  src.connect(hp).connect(g); g.connect(reverb); g.connect(masterGain);
+  src.start(time); src.stop(time+0.08);
+}
+
+// Sequencer
+let playing=false, nextTime=0, step=0, lookahead=0.06, scheduleTimer=null;
+const STEPS_PER_BEAT = 4;   // 16th notes
+const TILE_STEPS = 8;       // 2 beats per tile
+
+function bpmToStepSec(bpm){ return 60 / (bpm * STEPS_PER_BEAT); }
+
+function schedule(){
+  const ctx = ensureCtx();
+  const bpm = parseInt(document.getElementById('bpm').value,10);
+  const stepSec = bpmToStepSec(bpm);
+  while(nextTime < ctx.currentTime + lookahead){
+    const plan = currentPlan();
+    if(plan.steps.length>0){
+      const st = plan.steps[step % plan.steps.length];
+      st.forEach(instr=>{ if(instr==='hh') playHat(nextTime); else if(instr==='bd') playKick(nextTime); else if(instr==='sd') playSnare(nextTime); });
+      const tileIdx = Math.floor(step / TILE_STEPS) % Math.max(1, plan.tileCount);
+      pulseSlot(tileIdx);
+    }
+    nextTime += stepSec;
+    step++;
+  }
+}
+
+function currentPlan(){
+  const sel = selections.filter(s=>s!==null);
+  const steps = [];
+  if(sel.length===0) return {steps, tileCount:0};
+  sel.forEach(p=>{
+    for(let i=0;i<TILE_STEPS;i++){
+      const arr=[];
+      if(p.hh.includes(i)) arr.push('hh');
+      if(p.bd.includes(i)) arr.push('bd');
+      if(p.sd.includes(i)) arr.push('sd');
+      steps.push(arr);
+    }
+  });
+  return {steps, tileCount: sel.length};
+}
+
+function pulseSlot(idx){
+  const el = document.getElementById('slot'+idx);
+  if(!el) return;
+  el.style.boxShadow='0 0 0 2px #22c55e66 inset';
+  setTimeout(()=>{ el.style.boxShadow = el.classList.contains('filled') ? '0 0 0 2px #22c55e33 inset' : 'none'; }, 80);
+}
+
+function start(){
+  if(playing) return;
+  if(selections.filter(s=>s!==null).length===0){ setStatus('Pick at least 1 tile.'); return; }
+  ensureCtx().resume();
+  playing=true; nextTime=ensureCtx().currentTime+0.05; step=0;
+  scheduleTimer = setInterval(schedule, 25);
+  setStatus('');
+}
+function stop(){
+  playing=false; if(scheduleTimer) clearInterval(scheduleTimer); scheduleTimer=null;
+}
+
+// UI
+const lib = document.getElementById('library');
+const selectionEl = document.getElementById('selection');
+const bpm = document.getElementById('bpm');
+const bpmVal = document.getElementById('bpmVal');
+const statusEl = document.getElementById('status');
+
+function setStatus(t){ statusEl.textContent=t; }
+
+let selections=[null,null,null,null];
+
+function renderLibrary(){
+  lib.innerHTML='';
+  PATTERNS.forEach(p=>{
+    const d=document.createElement('div'); d.className='tile'; d.dataset.id=p.id;
+    d.innerHTML=`<div class="top"><div class="id">#${p.id}</div><div class="name">${p.name}</div></div>
+                 <img alt="pattern" src="${p.img}"/>`;
+    d.addEventListener('click',()=>onPick(p.id));
+    lib.appendChild(d);
+  });
+}
+
+function onPick(id){
+  const p = PATTERNS.find(x=>x.id===id);
+  const idx = selections.findIndex(x=>x===null);
+  const slotIdx = idx===-1 ? 3 : idx;
+  selections[slotIdx]=p;
+  updateSlots();
+}
+
+function updateSlots(){
+  for(let i=0;i<4;i++){
+    const el=document.getElementById('slot'+i);
+    const p=selections[i];
+    if(p){
+      el.classList.add('filled');
+      el.innerHTML = `<img alt="sel" src="${p.img}"/>`;
+    }else{
+      el.classList.remove('filled');
+      el.innerHTML = `<span class="muted">Slot ${i+1}</span>`;
+      el.style.boxShadow='none';
+    }
+  }
+}
+
+document.getElementById('startBtn').addEventListener('click', start);
+document.getElementById('stopBtn').addEventListener('click', stop);
+document.getElementById('clearBtn').addEventListener('click', ()=>{ selections=[null,null,null,null]; updateSlots(); });
+bpm.addEventListener('input', ()=>{ bpmVal.textContent=bpm.value; });
+document.querySelectorAll('.bpm-step').forEach(btn=>btn.addEventListener('click',()=>{ 
+  const step=parseInt(btn.dataset.step,10);
+  let v=parseInt(bpm.value,10)+step; v=Math.max(60, Math.min(200,v)); bpm.value=v; bpmVal.textContent=v;
+}));
+window.addEventListener('keydown', (e)=>{
+  if(['INPUT','TEXTAREA'].includes(document.activeElement.tagName)) return;
+  if(e.code==='Space'){ e.preventDefault(); playing?stop():start(); }
+  if(e.code==='ArrowLeft'){ let v=parseInt(bpm.value,10)-1; v=Math.max(60,v); bpm.value=v; bpmVal.textContent=v; }
+  if(e.code==='ArrowRight'){ let v=parseInt(bpm.value,10)+1; v=Math.min(200,v); bpm.value=v; bpmVal.textContent=v; }
+});
+
+renderLibrary();
+updateSlots();</script>
+</body>
+</html>

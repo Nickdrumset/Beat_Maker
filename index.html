@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -173,6 +174,29 @@
     .grid.cols-3{ grid-template-columns: 1fr; }    /* 1열 */
     header{ padding-top: 28px; }
   }
+/* --- Fullscreen button --- */
+.fs-btn {
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 9999px;
+  background: rgba(0,0,0,0.6);
+  color: #fff;
+  cursor: pointer;
+  transition: transform 120ms ease, background 120ms ease, box-shadow 120ms ease;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+  z-index: 1000;
+}
+.fs-btn:hover { background: rgba(0,0,0,0.75); transform: translateY(-1px); }
+.fs-btn:active { transform: translateY(0); }
+.fs-btn:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(255,255,255,0.5); }
+.icon { width: 22px; height: 22px; display: inline; }
+.icon.exit { display: none; }
 </style>
 </head>
 <body>
@@ -233,8 +257,25 @@
     <footer style="text-align:center; color:var(--sub); font-size: clamp(11px, 1.2vw, 13px); padding: clamp(20px,4vw,28px) clamp(12px,2vw,16px) clamp(28px,6vw,48px);">
       © 2025 Nick Drum Challenge. All rights reserved <span class="chip">Beat Maker – Glass v1</span>
     </footer>
-  </div>
+ </div>
 </div>
+
+<button id="fsBtn" class="fs-btn" aria-label="전체화면 전환 (F)" title="전체화면 전환 (F)" aria-pressed="false">
+  <!-- Enter fullscreen icon -->
+  <svg class="icon enter" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M4 10V4h6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M20 14v6h-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M4 4l7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    <path d="M20 20l-7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+  </svg>
+  <!-- Exit fullscreen icon -->
+  <svg class="icon exit" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M10 4H4v6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M14 20h6v-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M11 11L4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    <path d="M13 13l7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+  </svg>
+</button>
 
 <script>
 /* ==== Patterns ==== */
@@ -492,6 +533,45 @@ function applyVerticalFit(){
   wrap.style.width = `calc(100% / ${scale})`; /* 가운데 정렬 유지 */
 }
 
+/* === Fullscreen helpers === */
+const fsBtn = document.getElementById('fsBtn');
+const fsEnterIcon = fsBtn ? fsBtn.querySelector('.icon.enter') : null;
+const fsExitIcon  = fsBtn ? fsBtn.querySelector('.icon.exit')  : null;
+const isFullscreenNow = () => document.fullscreenElement || document.webkitFullscreenElement;
+function fsEnter(el){
+  if (el.requestFullscreen) return el.requestFullscreen();
+  if (el.webkitRequestFullscreen) return el.webkitRequestFullscreen();
+  return Promise.reject(new Error('Fullscreen API not supported'));
+}
+function fsExit(){
+  if (document.exitFullscreen) return document.exitFullscreen();
+  if (document.webkitExitFullscreen) return document.webkitExitFullscreen();
+  return Promise.reject(new Error('Fullscreen API not supported'));
+}
+function fsUpdateUI(){
+  const on = !!isFullscreenNow();
+  if (fsBtn) fsBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+  if (fsEnterIcon) fsEnterIcon.style.display = on ? 'none' : 'inline';
+  if (fsExitIcon)  fsExitIcon.style.display  = on ? 'inline' : 'none';
+}
+async function fsToggle(){
+  try{
+    if (isFullscreenNow()){
+      await fsExit();
+    } else {
+      // 전체 페이지 기준이 가장 호환성 좋음
+      await fsEnter(document.documentElement);
+    }
+  } catch (err){
+    console.error(err);
+  } finally {
+    fsUpdateUI();
+  }
+}
+if (fsBtn) fsBtn.addEventListener('click', fsToggle);
+document.addEventListener('fullscreenchange', fsUpdateUI);
+document.addEventListener('webkitfullscreenchange', fsUpdateUI);
+
 /* === Events === */
 document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click', ()=>setMode(t.dataset.mode)));
 document.getElementById('startBtn').addEventListener('click', start);
@@ -507,17 +587,29 @@ document.addEventListener('keydown',(e)=>{
   const tag=(document.activeElement&&document.activeElement.tagName)||'';
   const typing = ['INPUT','TEXTAREA','SELECT'].includes(tag) || (document.activeElement && document.activeElement.isContentEditable);
   if(typing) return;
+  // Fullscreen state
+  const fsOn = !!(document.fullscreenElement || document.webkitFullscreenElement);
   if(e.code==='Space'){ e.preventDefault(); isPlaying?stop():start(); }
-  else if(e.code==='Escape'){ e.preventDefault(); selectedObjs=[null,null,null,null]; renderSelection(); stop(); }
+  else if(e.code==='Escape'){
+    e.preventDefault();
+    if (fsOn){
+      // 전체화면 해제만 수행, 슬롯 리셋은 하지 않음
+      try{ (document.exitFullscreen && document.exitFullscreen()) || (document.webkitExitFullscreen && document.webkitExitFullscreen()); } catch(_){}
+      return;
+    }
+    selectedObjs=[null,null,null,null]; renderSelection(); stop();
+  }
   else if(e.code==='Backspace'){ e.preventDefault(); for(let i=3;i>=0;i--){ if(selectedObjs[i]){ selectedObjs[i]=null; break; } } renderSelection(); }
   else if(e.code==='ArrowLeft'){ let v=Math.max(60, parseInt(bpm.value,10)-1); bpm.value=v; bpmVal.textContent=v; }
   else if(e.code==='ArrowRight'){ let v=Math.min(200, parseInt(bpm.value,10)+1); bpm.value=v; bpmVal.textContent=v; }
+  else if(e.key==='f' || e.key==='F' || e.code==='KeyF'){ e.preventDefault(); fsToggle(); }
 });
 
 /* === Init === */
 setMode("4");
 window.addEventListener('load', applyVerticalFit);
 window.addEventListener('resize', applyVerticalFit);
+fsUpdateUI && fsUpdateUI();
 </script>
 </body>
 </html>

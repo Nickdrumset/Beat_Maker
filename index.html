@@ -1,99 +1,243 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Nick Drum Beat Maker (Mix, Original Timing)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Nick Drum Beat Maker (Mix, Original Timing) – Glass UI</title>
 <style>
-  :root { --bg:#0b0c10; --card:#111217; --muted:#9aa0a6; --accent:#22c55e; --danger:#ef4444; --border:#20232b; }
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:#fff;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Noto Sans,Helvetica,Arial}
-  .container{max-width:1100px;margin:0 auto;padding:24px}
-  .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
-  h1{font-size:32px; line-height:1.1; margin:0; letter-spacing:0.3px;
-     background: linear-gradient(90deg,#fff,#22c55e 60%,#a7f3d0);
-     -webkit-background-clip:text; background-clip:text; color:transparent;}
-  .muted{color:var(--muted);font-size:12px}
-  .btn{padding:10px 16px;border-radius:14px;border:1px solid var(--border);background:var(--accent);color:#051b0d;font-weight:700;cursor:pointer}
-  .btn.stop{background:var(--danger);color:#fff}
-  .btn.clear{background:#1f2937;color:#fff}
-  .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:12px}
-  .grid{display:grid;gap:12px}
-  .grid.cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}
-  .tile{background:#0f1117;border:1px solid var(--border);border-radius:14px;padding:10px;cursor:pointer;transition:transform .08s ease}
-  .tile:hover{transform:translateY(-2px)}
-  .tile .top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-  .tile .id{font-weight:800;font-size:14px}
-  .tile .name{font-size:12px;color:var(--muted)}
-  .tile img{width:100%;height:120px;display:block;object-fit:contain;border-radius:10px;background:#fff;border:1px solid #2b2f3a}
-  .selection{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-  .slot{min-height:140px;border:1px dashed var(--border);border-radius:12px;display:flex;align-items:center;justify-content:center;padding:6px;background:#0f1117}
-  .slot.filled{border-style:solid}
-  .slot img{width:100%;height:120px;object-fit:contain;border-radius:8px;background:#fff;border:1px solid #2b2f3a}
-  input[type=range]{accent-color:var(--accent)}
-  .value{width:56px;text-align:right;font-feature-settings:'tnum';font-variant-numeric:tabular-nums}
-  .warn{color:#fbbf24;font-size:12px;margin-left:6px}
-  .note{font-size:12px;color:var(--muted);margin-top:8px}
+  :root{
+    --bg-grad: linear-gradient(135deg, #bfeee3 0%, #ffd8ba 50%, #bcd9f5 100%);
+    --card: rgba(255,255,255,0.65);
+    --section: rgba(245,248,250,.85);
+    --text: #1c2c38;
+    --sub: #385858;
 
-  .tabs{display:flex;gap:12px;margin-top:12px}
-  .tab{flex:1;padding:12px;border-radius:12px;background:#1f2937;color:#e5e7eb;cursor:pointer;text-align:center;border:1px solid var(--border)}
-  .tab.active{background:#0f172a; box-shadow: 0 0 0 2px #334155 inset}
+    --radius: clamp(12px, 1.6vw, 16px);
+    --gap: clamp(12px, 2.2vw, 20px);
 
-  /* continuous highlight */
+    --fs-title: clamp(40px, 7vw, 86px);
+
+    --line: rgba(100,150,200,0.22);
+    --line-strong: rgba(100,150,200,0.35);
+    --hover: rgba(200,230,250,0.15);
+    --chip-bg: rgba(200,230,250,.32);
+  }
+
+  *{ box-sizing: border-box; }
+  html, body { height: 100%; }
+  body{
+    margin:0;
+    color:var(--text);
+    background: var(--bg-grad) fixed;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, 'Apple Color Emoji','Segoe UI Emoji','Segoe UI Symbol';
+    -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    overflow:hidden; /* 데스크톱/태블릿에서 스케일 시 넘침 방지 */
+  }
+
+  /* 스테이지: 데스크톱/태블릿에서 가로 중앙 정렬, 세로 상단 정렬 */
+  #stage{
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;           /* 모바일 주소창 보정 */
+    display: flex;
+    justify-content: center;  /* 가로 중앙 */
+    align-items: flex-start;  /* 세로 상단 */
+    overflow: hidden;
+  }
+
+  /* 스케일 대상 */
+  #scaleWrap { transform-origin: top center; }
+
+  header{
+    padding: clamp(36px, 6vw, 64px) 20px clamp(20px, 4vw, 40px);
+    text-align:center; position:relative; overflow:hidden; isolation:isolate;
+  }
+  h1.title{
+    margin:0;
+    font-size: var(--fs-title);
+    font-weight: 800;
+    background: linear-gradient(90deg, #ffffff, #cfeae1);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    -webkit-text-fill-color:transparent; -webkit-text-stroke:1px black;
+  }
+
+  main{ max-width: min(1320px, 96vw); margin: clamp(12px,3vw,28px) auto clamp(36px,6vw,56px); padding: 0 clamp(8px,2vw,16px); }
+
+  .card{
+    background: var(--card);
+    backdrop-filter: blur(8px);
+    border: 0;
+    border-radius: var(--radius);
+    box-shadow: 0 12px 28px rgba(100,150,200,.22);
+    padding: clamp(18px, 2.8vw, 32px);
+  }
+  .section{
+    background: var(--section);
+    border-radius: var(--radius);
+    box-shadow: 0 8px 18px rgba(100,150,200,.18);
+    padding: clamp(12px, 2vw, 20px);
+    border: 1px solid var(--line);
+  }
+
+  .row{ display:flex; gap: clamp(8px,1.4vw,12px); align-items:center; flex-wrap: wrap; }
+  .chip{ display:inline-block; font-size: 12px; color: var(--sub); padding: 2px 8px; border-radius: 999px; background: var(--chip-bg); border:1px solid rgba(100,150,200,.18); }
+
+  /* Buttons */
+  .btn{
+    min-height: clamp(38px, 5.2vw, 48px);
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    border-radius: clamp(10px, 1.5vw, 12px);
+    border: 1px solid var(--line);
+    background: rgba(255,255,255,0.55);
+    color: var(--text);
+    padding: 10px 16px;
+    font-weight: 700;
+    cursor:pointer;
+    transition: transform .15s ease, box-shadow .2s ease, background .25s ease, border-color .2s ease;
+  }
+  .btn:hover{ transform: translateY(-1px); box-shadow: 0 4px 12px rgba(100,150,200,0.15); background: var(--hover); border-color: var(--line-strong); }
+
+  input[type=range]{ width: 220px; accent-color: #6aa9e9; }
+  .value{ width:56px; text-align:right; font-feature-settings:'tnum'; font-variant-numeric:tabular-nums; color: var(--sub); }
+  .warn{ color:#a15c00; font-size: 12px; margin-left: 6px; }
+
+  /* Slots */
+  .selection{ display:grid; grid-template-columns: repeat(4, 1fr); gap: var(--gap); }
+  .slot{
+    min-height: 140px;
+    border:1px solid var(--line);
+    border-radius: 12px;
+    display:flex; align-items:center; justify-content:center; padding:6px;
+    background: rgba(255,255,255,.55);
+    transition: box-shadow .12s ease, border-color .12s ease, transform .08s ease;
+    overflow: hidden; /* 내부 이미지 튀어나옴 방지 */
+  }
+  .slot.filled{ border-color: var(--line-strong); }
+  .slot img{
+    max-width:100%;
+    height:auto;            /* 세로 화면에서 가로 그림 잘림 방지 */
+    object-fit: contain;
+    border-radius: 8px; background:#fff; border:1px solid rgba(100,150,200,.26);
+  }
   .slot.playing{
-    border-color: var(--accent) !important;
-    box-shadow: 0 0 0 2px var(--accent) inset, 0 0 16px rgba(34,197,94,0.55);
-    transition: box-shadow .08s ease, border-color .08s ease;
+    border-color: #6aa9e9 !important;
+    box-shadow: 0 0 0 2px #6aa9e9 inset, 0 0 16px rgba(106,169,233,0.45);
+  }
+
+  /* Tabs / Tiles */
+  .tabs{ display:flex; gap: var(--gap); margin-top: clamp(12px,1.8vw,16px); }
+  .tab{
+    flex:1; text-align:center; cursor:pointer;
+    padding: 12px; border-radius: 12px;
+    background: rgba(255,255,255,.45);
+    color: var(--text);
+    border: 1px solid var(--line);
+    transition: background .2s ease, box-shadow .2s ease, border-color .2s ease;
+  }
+  .tab:hover{ background: var(--hover); border-color: var(--line-strong); }
+  .tab.active{ background: rgba(255,255,255,.65); box-shadow: 0 0 0 2px rgba(100,150,200,.22) inset; }
+
+  .grid{ display:grid; gap: var(--gap); }
+  .grid.cols-3{ grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .tile{
+    background: rgba(255,255,255,.55);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 10px; cursor:pointer;
+    transition: transform .08s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease;
+  }
+  .tile:hover{ transform: translateY(-2px); box-shadow: 0 4px 12px rgba(100,150,200,0.18); background: var(--hover); border-color: var(--line-strong); }
+  .tile .top{ display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+  .tile .id{ font-weight:800; font-size:14px; }
+  .tile .name{ font-size:12px; color: var(--sub); }
+  .tile img{
+    max-width:100%;
+    height:auto;            /* 세로 화면에서 가로 그림 잘림 방지 */
+    object-fit: contain;
+    border-radius: 10px; background:#fff; border:1px solid rgba(100,150,200,.26);
+  }
+
+  .note{ font-size: 12px; color: var(--sub); margin-top: 8px; }
+
+  /* ─────────────────────────────────────────────────────
+     휴대폰(Phone) 전용: pointer:coarse + 화면폭 ≤ 600px
+     태블릿은 데스크톱 규칙 유지
+     ───────────────────────────────────────────────────── */
+  @media (hover: none) and (pointer: coarse) and (max-width: 600px){
+    body{ overflow:auto; }                         /* 스케일 해제 시 스크롤 허용 */
+    #stage{ align-items: flex-start; }             /* 상단 정렬 */
+    #scaleWrap{ transform: none !important; width: 100% !important; }
+    .selection{ grid-template-columns: 1fr; }      /* 1열 */
+    .grid.cols-3{ grid-template-columns: 1fr; }    /* 1열 */
+    header{ padding-top: 28px; }
   }
 </style>
 </head>
 <body>
-<div class="container">
-  <div style="text-align:center; margin-bottom: 12px;">
-    <h1>Nick Drum Beat Maker</h1>
-    <div class="muted">Pick 1–4 tiles (duplicates allowed). Start to loop only the selected tiles. Clear to reset selection. BPM 60–200.</div>
-  </div>
+<div id="stage">
+  <div id="scaleWrap">
+    <header>
+      <h1 class="title">Nick Drum Beat Maker</h1>
+      <!-- 안내문 2개 삭제됨 -->
+    </header>
 
-  <div class="row">
-    <button id="startBtn" class="btn">Start</button>
-    <button id="stopBtn" class="btn stop">Stop</button>
-    <button id="clearBtn" class="btn clear">Clear Selection</button>
-    <div class="row">
-      <label for="bpm" class="muted">BPM</label>
-      <input id="bpm" type="range" min="60" max="200" value="100" />
-      <div id="bpmVal" class="value muted">100</div>
-      <div class="row" style="gap:6px;margin-left:10px">
-        <button type="button" class="btn clear" data-step="-5">-5</button>
-        <button type="button" class="btn clear" data-step="-1">-1</button>
-        <button type="button" class="btn clear" data-step="1">+1</button>
-        <button type="button" class="btn clear" data-step="5">+5</button>
+    <main>
+      <!-- Controls -->
+      <div class="card" style="margin-bottom: var(--gap);">
+        <div class="row" style="justify-content:space-between; gap: var(--gap);">
+          <div class="row">
+            <button id="startBtn" class="btn">Start</button>
+            <button id="stopBtn" class="btn">Stop</button> <!-- Start와 동일 스타일 -->
+            <button id="clearBtn" class="btn clear">Clear</button>
+          </div>
+          <div class="row">
+            <span class="chip">BPM</span>
+            <input id="bpm" type="range" min="60" max="200" value="60" /> <!-- 기본값 60 -->
+            <div id="bpmVal" class="value">60</div>
+            <div class="row" style="gap:6px;margin-left:10px">
+              <button type="button" class="btn clear" data-step="-5">-5</button>
+              <button type="button" class="btn clear" data-step="-1">-1</button>
+              <button type="button" class="btn clear" data-step="1">+1</button>
+              <button type="button" class="btn clear" data-step="5">+5</button>
+            </div>
+            <div id="status" class="warn"></div>
+          </div>
+        </div>
       </div>
-    </div>
-    <div id="status" class="warn"></div>
-  </div>
 
-  <div class="card" style="margin-top:12px;">
-    <div class="selection" id="selection">
-      <div class="slot" id="slot0"><span class="muted">Slot 1</span></div>
-      <div class="slot" id="slot1"><span class="muted">Slot 2</span></div>
-      <div class="slot" id="slot2"><span class="muted">Slot 3</span></div>
-      <div class="slot" id="slot3"><span class="muted">Slot 4</span></div>
-    </div>
-    <div class="note" id="note"></div>
-  </div>
+      <!-- Selection -->
+      <div class="card" style="margin-bottom: var(--gap);">
+        <div class="selection" id="selection">
+          <div class="slot" id="slot0"><span class="chip">Slot 1</span></div>
+          <div class="slot" id="slot1"><span class="chip">Slot 2</span></div>
+          <div class="slot" id="slot2"><span class="chip">Slot 3</span></div>
+          <div class="slot" id="slot3"><span class="chip">Slot 4</span></div>
+        </div>
+        <div class="note" id="note"></div> <!-- 4 Beat의 노트 문구는 빈값으로 처리 -->
+      </div>
 
-  <div class="tabs">
-    <div class="tab active" data-mode="4">4 Beat</div>
-    <div class="tab" data-mode="8">8 Beat</div>
-    <div class="tab" data-mode="16">16 Beat</div>
-  </div>
+      <!-- Tabs -->
+      <div class="tabs">
+        <div class="tab active" data-mode="4">4 Beat</div>
+        <div class="tab" data-mode="8">8 Beat</div>
+        <div class="tab" data-mode="16">16 Beat</div>
+      </div>
 
-  <h2 style="margin-top:18px; font-size:18px;">Tiles</h2>
-  <div class="grid cols-3" id="library"></div>
+      <!-- Library -->
+      <h2 style="margin-top:18px; font-size:18px;">Tiles</h2>
+      <div class="grid cols-3 card" id="library" style="padding: clamp(12px,2vw,20px);"></div>
+    </main>
+
+    <footer style="text-align:center; color:var(--sub); font-size: clamp(11px, 1.2vw, 13px); padding: clamp(20px,4vw,28px) clamp(12px,2vw,16px) clamp(28px,6vw,48px);">
+      © 2025 Nick Drum Challenge. All rights reserved <span class="chip">Beat Maker – Glass v1</span>
+    </footer>
+  </div>
 </div>
 
 <script>
-// ==== Original pattern sets (as in original single files) ====
+/* ==== Patterns ==== */
 const P4 = [
   { id:1, name:"Pattern 1", img:"Images/4beat/1.png", hh:[0,2], sd:[2], bd:[] },
   { id:2, name:"Pattern 2", img:"Images/4beat/2.png", hh:[0,2], sd:[2], bd:[0] },
@@ -129,20 +273,15 @@ const P16 = [
 ];
 
 const MODES = {
-  "4":  { title:"4 Beat",  patterns:P4,  tileSteps:4,  stepType:"eighth",    note:"Each tile is 1 beat (4 sixteenth notes). 4 tiles = 1 bar." },
+  "4":  { title:"4 Beat",  patterns:P4,  tileSteps:4,  stepType:"eighth",    note:"" }, /* 4모드 노트 삭제 */
   "8":  { title:"8 Beat",  patterns:P8,  tileSteps:4,  stepType:"eighth",    note:"Each tile is 2 beats (4 eighth notes). 4 tiles = 2 bars." },
   "16": { title:"16 Beat", patterns:P16, tileSteps:8,  stepType:"sixteenth", note:"Each tile is 2 beats (8 sixteenth notes). 4 tiles = 2 bars (4/4)." }
 };
 
-// === Helpers to normalize to 16th-note base for mixing ===
 function toSixteenthPattern(p, stepType, tileSteps){
-  const mul = (stepType==='eighth') ? 2 : 1; // eighth -> x2 to sixteenth
+  const mul = (stepType==='eighth') ? 2 : 1;
   const map = arr => (arr||[]).map(v => v*mul);
-  return {
-    id:p.id, name:p.name, img:p.img,
-    hh:map(p.hh), sd:map(p.sd), bd:map(p.bd),
-    TILE_STEPS: tileSteps * mul
-  };
+  return { id:p.id, name:p.name, img:p.img, hh:map(p.hh), sd:map(p.sd), bd:map(p.bd), TILE_STEPS: tileSteps * mul };
 }
 function currentPatternObjectById(id){
   const conf = MODES[MODE];
@@ -151,11 +290,11 @@ function currentPatternObjectById(id){
   return toSixteenthPattern(src, conf.stepType, conf.tileSteps);
 }
 
-// === State ===
+/* === State === */
 let MODE="4";
 let CONF=MODES[MODE];
 let PATTERNS=CONF.patterns.slice();
-let selectedObjs=[null,null,null,null]; // up to 4 mixed tiles
+let selectedObjs=[null,null,null,null];
 let isPlaying=false, nextNoteTime=0, currentStep=0, timer=null;
 
 const libEl=document.getElementById('library');
@@ -164,7 +303,7 @@ const slots=[document.getElementById('slot0'),document.getElementById('slot1'),d
 const statusEl=document.getElementById('status');
 const bpm=document.getElementById('bpm'), bpmVal=document.getElementById('bpmVal');
 
-// === Audio ===
+/* === Audio === */
 let audioCtx, masterGain, reverb;
 function ensureCtx(){
   if(!audioCtx){
@@ -214,12 +353,13 @@ function playHat(time){
   src.start(time); src.stop(time+0.08);
 }
 
-// === Timing (base = sixteenth for mixing) ===
+/* === Timing === */
 function stepDurationSec(){
   const v=parseInt(bpm.value,10);
-  return 60/(v*4); // sixteenth
+  return 60/(v*4);
 }
 
+/* === Pattern combine === */
 function buildCombined(){
   const chosen = selectedObjs.filter(o=>o);
   if(chosen.length===0) return null;
@@ -236,6 +376,7 @@ function buildCombined(){
   return out;
 }
 
+/* === Slot highlight === */
 function updateSlotHighlight(activeIdx){
   for(let i=0;i<4;i++){
     const el=slots[i]; if(!el) continue;
@@ -244,12 +385,12 @@ function updateSlotHighlight(activeIdx){
 }
 function clearSlotHighlight(){ slots.forEach(el=>el.classList.remove('playing')); }
 
+/* === Scheduler === */
 function schedule(){
   const ctx=ensureCtx(); const P=buildCombined(); if(!P) return;
   const stepDur=stepDurationSec(); const total = P.total;
   while(nextNoteTime < ctx.currentTime + 0.12){
     const step = currentStep % total;
-    // tile index by cumulative bounds
     let tileIdx = 0; while(tileIdx < P.tileBounds.length && step >= P.tileBounds[tileIdx]) tileIdx++;
     updateSlotHighlight(tileIdx);
     const t=nextNoteTime;
@@ -260,6 +401,7 @@ function schedule(){
   }
 }
 
+/* === Transport === */
 function start(){
   if(selectedObjs.every(o=>!o)){ statusEl.textContent='Pick at least 1 tile.'; return; }
   ensureCtx().resume(); isPlaying=true; currentStep=0; nextNoteTime=ensureCtx().currentTime+0.05;
@@ -269,8 +411,8 @@ function stop(){
   if(timer) clearInterval(timer); timer=null; isPlaying=false; clearSlotHighlight();
 }
 
-// === UI ===
-function renderLibrary(){
+/* === UI rendering === */
+const libElInit = () => {
   libEl.innerHTML='';
   PATTERNS.forEach(p=>{
     const card=document.createElement('div'); card.className='tile';
@@ -286,34 +428,81 @@ function renderLibrary(){
     });
     libEl.appendChild(card);
   });
-}
+};
 function renderSelection(){
   clearSlotHighlight();
   for(let i=0;i<4;i++){
     const el=slots[i]; el.innerHTML='';
     const obj=selectedObjs[i];
-    if(!obj){ el.classList.remove('filled'); el.innerHTML=`<span class="muted">Slot ${i+1}</span>`; }
+    if(!obj){ el.classList.remove('filled'); el.innerHTML=`<span class="chip">Slot ${i+1}</span>`; }
     else{ el.classList.add('filled'); el.innerHTML=`<img src="${obj.img}" alt="Pattern ${obj.id}">`; }
   }
 }
 
+/* === Mode switching === */
 function setMode(m){
   if(isPlaying) stop();
   MODE=m; CONF=MODES[MODE]; PATTERNS=CONF.patterns.slice();
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.mode===MODE));
-  document.getElementById('note').textContent = CONF.note;
-  renderLibrary(); renderSelection(); // selection persists
+  document.getElementById('note').textContent = CONF.note; /* 4모드는 빈 문자열 */
+  libElInit(); renderSelection();
 }
 
-// Controls
+/* === Device detection helpers === */
+function isPhoneLike(){
+  // 휴대폰 판별: 미디어쿼리 + 폭 기준
+  const mq = window.matchMedia('(hover: none) and (pointer: coarse) and (max-width: 600px)');
+  if (mq && typeof mq.matches === 'boolean') return mq.matches;
+  // 보조: UA + 폭
+  const ua = navigator.userAgent.toLowerCase();
+  const maybeMobile = /android|iphone|ipod|mobile|samsungbrowser/.test(ua);
+  return maybeMobile && window.innerWidth <= 600;
+}
+
+/* === Vertical-first fit (데스크톱/태블릿 전용) === */
+function applyVerticalFit(){
+  const wrap = document.getElementById('scaleWrap');
+  const stage = document.getElementById('stage');
+  if(!wrap || !stage) return;
+
+  // 휴대폰에서는 스케일 해제 (CSS 미디어쿼리와 중복 방어)
+  if (isPhoneLike()){
+    wrap.style.transform = 'none';
+    wrap.style.width = '100%';
+    return;
+  }
+
+  // 데스크톱/태블릿: 세로 우선 + 가로 안전
+  wrap.style.transform = 'scale(1)';
+  wrap.style.width = 'auto';
+
+  const contentH = wrap.scrollHeight;
+  const contentW = wrap.scrollWidth;
+  const viewH = stage.clientHeight;
+  const viewW = stage.clientWidth;
+  if(contentH <= 0 || contentW <= 0) return;
+
+  let scaleH = viewH / contentH;
+  let scale  = scaleH;
+  if (contentW * scaleH > viewW) {
+    const scaleW = viewW / contentW;
+    scale = Math.min(scaleH, scaleW);
+  }
+  wrap.style.transform = `scale(${scale})`;
+  wrap.style.width = `calc(100% / ${scale})`; /* 가운데 정렬 유지 */
+}
+
+/* === Events === */
 document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click', ()=>setMode(t.dataset.mode)));
 document.getElementById('startBtn').addEventListener('click', start);
 document.getElementById('stopBtn').addEventListener('click', stop);
 document.getElementById('clearBtn').addEventListener('click', ()=>{ selectedObjs=[null,null,null,null]; renderSelection(); stop(); });
+
 bpm.addEventListener('input', ()=>{ bpmVal.textContent=bpm.value; });
 document.querySelectorAll('button[data-step]').forEach(btn=>btn.addEventListener('click',()=>{
   let v=parseInt(bpm.value,10)+parseInt(btn.dataset.step,10); v=Math.max(60, Math.min(200,v)); bpm.value=v; bpmVal.textContent=v;
 }));
+
 document.addEventListener('keydown',(e)=>{
   const tag=(document.activeElement&&document.activeElement.tagName)||'';
   const typing = ['INPUT','TEXTAREA','SELECT'].includes(tag) || (document.activeElement && document.activeElement.isContentEditable);
@@ -325,8 +514,10 @@ document.addEventListener('keydown',(e)=>{
   else if(e.code==='ArrowRight'){ let v=Math.min(200, parseInt(bpm.value,10)+1); bpm.value=v; bpmVal.textContent=v; }
 });
 
-// Init
+/* === Init === */
 setMode("4");
+window.addEventListener('load', applyVerticalFit);
+window.addEventListener('resize', applyVerticalFit);
 </script>
 </body>
 </html>

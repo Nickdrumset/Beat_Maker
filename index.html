@@ -1,5 +1,6 @@
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -26,7 +27,7 @@
   }
 
   *{ box-sizing: border-box; }
-  html, body { height: 100%; }
+  html, body { height: 100%; min-height: 100dvh; }
   body{
     margin:0;
     color:var(--text);
@@ -174,6 +175,22 @@
     .grid.cols-3{ grid-template-columns: 1fr; }    /* 1열 */
     header{ padding-top: 28px; }
   }
+. 
+  /* ── Portrait / Fullscreen support ───────────────────────────────── */
+  /* iOS/Android safe area when in fullscreen */
+  body.fs-on.portrait{
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+  /* Portrait orientation: keep original columns; only contain images */
+  @media (orientation: portrait){
+    #stage{ align-items: flex-start; }
+    /* Keep original columns in portrait; no overrides for .selection or .grid.cols-3 */
+    #scaleWrap img{ max-width: 100%; height: auto; object-fit: contain; }
+  }
+
 /* --- Fullscreen button --- */
 .fs-btn {
   position: fixed;
@@ -538,6 +555,15 @@ const fsBtn = document.getElementById('fsBtn');
 const fsEnterIcon = fsBtn ? fsBtn.querySelector('.icon.enter') : null;
 const fsExitIcon  = fsBtn ? fsBtn.querySelector('.icon.exit')  : null;
 const isFullscreenNow = () => document.fullscreenElement || document.webkitFullscreenElement;
+
+function updateOrientationClasses(){
+  const portrait = window.matchMedia('(orientation: portrait)').matches;
+  document.body.classList.toggle('portrait', portrait);
+  document.body.classList.toggle('landscape', !portrait);
+  document.body.classList.toggle('fs-on', !!isFullscreenNow());
+  // Recompute fit when state changes
+  applyVerticalFit();
+}
 function fsEnter(el){
   if (el.requestFullscreen) return el.requestFullscreen();
   if (el.webkitRequestFullscreen) return el.webkitRequestFullscreen();
@@ -553,14 +579,17 @@ function fsUpdateUI(){
   if (fsBtn) fsBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
   if (fsEnterIcon) fsEnterIcon.style.display = on ? 'none' : 'inline';
   if (fsExitIcon)  fsExitIcon.style.display  = on ? 'inline' : 'none';
+  updateOrientationClasses();
 }
 async function fsToggle(){
   try{
     if (isFullscreenNow()){
       await fsExit();
+      updateOrientationClasses();
     } else {
       // 전체 페이지 기준이 가장 호환성 좋음
       await fsEnter(document.documentElement);
+      updateOrientationClasses();
     }
   } catch (err){
     console.error(err);
@@ -571,6 +600,9 @@ async function fsToggle(){
 if (fsBtn) fsBtn.addEventListener('click', fsToggle);
 document.addEventListener('fullscreenchange', fsUpdateUI);
 document.addEventListener('webkitfullscreenchange', fsUpdateUI);
+// React to orientation/viewport changes
+window.addEventListener('orientationchange', updateOrientationClasses);
+window.addEventListener('resize', updateOrientationClasses);
 
 /* === Events === */
 document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click', ()=>setMode(t.dataset.mode)));
@@ -594,7 +626,10 @@ document.addEventListener('keydown',(e)=>{
     e.preventDefault();
     if (fsOn){
       // 전체화면 해제만 수행, 슬롯 리셋은 하지 않음
-      try{ (document.exitFullscreen && document.exitFullscreen()) || (document.webkitExitFullscreen && document.webkitExitFullscreen()); } catch(_){}
+      try{
+        (document.exitFullscreen && document.exitFullscreen()) || (document.webkitExitFullscreen && document.webkitExitFullscreen());
+      } catch(_){}
+      updateOrientationClasses();
       return;
     }
     selectedObjs=[null,null,null,null]; renderSelection(); stop();
@@ -610,6 +645,7 @@ setMode("4");
 window.addEventListener('load', applyVerticalFit);
 window.addEventListener('resize', applyVerticalFit);
 fsUpdateUI && fsUpdateUI();
+updateOrientationClasses();
 </script>
 </body>
 </html>

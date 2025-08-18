@@ -1,6 +1,5 @@
 
 
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -662,8 +661,8 @@ document.addEventListener('keydown',(e)=>{
     selectedObjs=[null,null,null,null]; renderSelection(); stop();
   }
   else if(e.code==='Backspace'){ e.preventDefault(); for(let i=3;i>=0;i--){ if(selectedObjs[i]){ selectedObjs[i]=null; break; } } renderSelection(); }
-  else if(e.code==='ArrowLeft'){ let v=Math.max(60, parseInt(bpm.value,10)-1); bpm.value=v; bpmVal.textContent=v; }
-  else if(e.code==='ArrowRight'){ let v=Math.min(200, parseInt(bpm.value,10)+1); bpm.value=v; bpmVal.textContent=v; }
+  else if(e.code==='ArrowLeft'){ let v=Math.max(60, parseInt(bpm.value,10)-5); bpm.value=v; bpmVal.textContent=v; }
+  else if(e.code==='ArrowRight'){ let v=Math.min(200, parseInt(bpm.value,10)+5); bpm.value=v; bpmVal.textContent=v; }
   else if(e.key==='f' || e.key==='F' || e.code==='KeyF'){ e.preventDefault(); fsToggle(); }
 });
 

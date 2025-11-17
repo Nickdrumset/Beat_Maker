@@ -1,12 +1,11 @@
 
 
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Nick Drum Beat Maker (Mix, Original Timing) – Glass UI</title>
+<title>4 8 16 Beat ExerciseNick Drum Beat Maker (Mix, Original Timing) – Glass UI</title>
 <style>
   :root{
     --bg-grad: linear-gradient(135deg, #bfeee3 0%, #ffd8ba 50%, #bcd9f5 100%);
@@ -105,12 +104,57 @@
   }
   .btn:hover{ transform: translateY(-1px); box-shadow: 0 4px 12px rgba(100,150,200,0.15); background: var(--hover); border-color: var(--line-strong); }
 
+  .modeToggle{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-right:16px;
+  }
+  .mode-btn{
+    min-height: 48px;           /* 32px * 1.5 */
+    padding: 9px 18px;          /* 6px/12px * 1.5 */
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: rgba(255,255,255,0.55);
+    font-size: 20px;            /* ~13px * 1.5 */
+    font-weight: 600;
+    color: var(--sub);
+    cursor:pointer;
+    transition: background .2s ease, border-color .2s ease, box-shadow .2s ease, transform .12s ease;
+  }
+  .mode-btn:hover{
+    background: var(--hover);
+    border-color: var(--line-strong);
+    box-shadow: 0 3px 8px rgba(100,150,200,0.18);
+    transform: translateY(-1px);
+  }
+  .mode-btn.active{
+    background: rgba(255,255,255,0.9);
+    box-shadow: 0 0 0 2px rgba(100,150,200,0.25) inset;
+    border-color: var(--line-strong);
+  }
+
   input[type=range]{ width: 220px; accent-color: #6aa9e9; }
   .value{ width:56px; text-align:right; font-feature-settings:'tnum'; font-variant-numeric:tabular-nums; color: var(--sub); }
   .warn{ color:#a15c00; font-size: 12px; margin-left: 6px; }
 
   /* Slots */
-  .selection{ display:grid; grid-template-columns: repeat(4, 1fr); gap: var(--gap); }
+  .selection{
+    display:flex;
+    flex-direction:column;
+    gap: var(--gap);
+  }
+  .selection-row{
+    display:grid;
+    gap: var(--gap);
+  }
+  .selection-row.row-1{
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .selection-row.row-2,
+  .selection-row.row-3{
+    grid-template-columns: repeat(4, 1fr);
+  }
   .slot{
     /* min-height: 140px; */
     aspect-ratio: 16 / 10; /* 일정 비율 유지로 세로 증가 방지 */
@@ -120,6 +164,27 @@
     background: rgba(255,255,255,.55);
     transition: box-shadow .12s ease, border-color .12s ease, transform .08s ease;
     overflow: hidden; /* 내부 이미지 튀어나옴 방지 */
+  }
+  .repeat{
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--sub);
+    opacity: .75;
+    display: flex;
+    align-items: center;
+  }
+  .slotWrap{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .slotWrap .repeat{
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--sub);
+    opacity: .75;
+    white-space: nowrap;
+    margin-right: 4px;
   }
   .slot.filled{ border-color: var(--line-strong); }
   .slot img{
@@ -176,11 +241,18 @@
     body{ overflow:auto; }                         /* 스케일 해제 시 스크롤 허용 */
     #stage{ align-items: flex-start; }             /* 상단 정렬 */
     #scaleWrap{ transform: none !important; width: 100% !important; }
-    .selection{ grid-template-columns: 1fr; }      /* 1열 */
-    .grid.cols-3{ grid-template-columns: 1fr; }    /* 1열 */
+    .selection{
+      display:flex;
+      flex-direction:column;
+      gap: var(--gap);
+    }
+    .selection-row{
+      grid-template-columns: 1fr;                  /* 모바일에서는 슬롯 1열 배치 */
+    }
+    .grid.cols-3{ grid-template-columns: 1fr; }    /* 타일도 1열 */
     header{ padding-top: 28px; }
   }
-. 
+ 
   /* ── Portrait / Fullscreen support ───────────────────────────────── */
   /* iOS/Android safe area when in fullscreen */
   body.fs-on.portrait{
@@ -225,7 +297,7 @@
 <div id="stage">
   <div id="scaleWrap">
     <header>
-      <h1 class="title">Nick Drum Beat Maker</h1>
+      <h1 class="title">4 8 16 Beat Exercise</h1>
       <!-- 안내문 2개 삭제됨 -->
     </header>
 
@@ -234,9 +306,12 @@
       <div class="card" style="margin-bottom: var(--gap);">
         <div class="row controlsWrap">
           <div class="row" id="transportRow">
+            <div class="modeToggle">
+              <button type="button" class="mode-btn active" data-mode="study">Study</button>
+              <button type="button" class="mode-btn" data-mode="maker">Maker</button>
+            </div>
             <button id="startBtn" class="btn">Start</button>
             <button id="stopBtn" class="btn">Stop</button> <!-- Start와 동일 스타일 -->
-            <button id="clearBtn" class="btn clear">Clear</button>
           </div>
           <div class="row" id="bpmRow">
             <span class="chip">BPM</span>
@@ -253,17 +328,6 @@
         </div>
       </div>
 
-      <!-- Selection -->
-      <div class="card" style="margin-bottom: var(--gap);">
-        <div class="selection" id="selection">
-          <div class="slot" id="slot0"><span class="chip">Slot 1</span></div>
-          <div class="slot" id="slot1"><span class="chip">Slot 2</span></div>
-          <div class="slot" id="slot2"><span class="chip">Slot 3</span></div>
-          <div class="slot" id="slot3"><span class="chip">Slot 4</span></div>
-        </div>
-        <div class="note" id="note"></div> <!-- 4 Beat의 노트 문구는 빈값으로 처리 -->
-      </div>
-
       <!-- Tabs -->
       <div class="tabs">
         <div class="tab active" data-mode="4">4 Beat</div>
@@ -271,9 +335,28 @@
         <div class="tab" data-mode="16">16 Beat</div>
       </div>
 
-      <!-- Library -->
-      <h2 style="margin-top:18px; font-size:18px;">Tiles</h2>
-      <div class="grid cols-3 card" id="library" style="padding: clamp(12px,2vw,20px);"></div>
+      <!-- Selection -->
+      <div class="card" style="margin-top: var(--gap); margin-bottom: var(--gap);">
+        <div class="selection" id="selection">
+          <div class="selection-row row-1">
+            <div class="slot" id="slot0"><span class="chip">Slot 1</span></div>
+            <div class="repeat">2 times each</div>
+          </div>
+          <div class="selection-row row-2">
+            <div class="slot" id="slot1"><span class="chip">Slot 2</span></div>
+            <div class="slot" id="slot2"><span class="chip">Slot 3</span></div>
+            <div class="slot" id="slot3"><span class="chip">Slot 4</span></div>
+            <div class="slot" id="slot4"><span class="chip">Slot 5</span></div>
+          </div>
+          <div class="selection-row row-3">
+            <div class="slot" id="slot5"><span class="chip">Slot 6</span></div>
+            <div class="slot" id="slot6"><span class="chip">Slot 7</span></div>
+            <div class="slot" id="slot7"><span class="chip">Slot 8</span></div>
+            <div class="slot" id="slot8"><span class="chip">Slot 9</span></div>
+          </div>
+        </div>
+        <div class="note" id="note"></div> <!-- 4 Beat의 노트 문구는 빈값으로 처리 -->
+      </div>
     </main>
 
  </div>
@@ -354,18 +437,30 @@ function currentPatternObjectById(id){
 let MODE="4";
 let CONF=MODES[MODE];
 let PATTERNS=CONF.patterns.slice();
-let selectedObjs=[null,null,null,null];
+// 최대 9개 슬롯까지 사용
+let selectedObjs=[null,null,null,null,null,null,null,null,null];
 let isPlaying=false, nextNoteTime=0, currentStep=0, timer=null;
+// 예비박(4카운트) 및 슬롯 재생 상태
+let isIntroPhase=false, introStep=0;
+let slotOrder=[], slotIndex=0, slotRepeat=0, stepInSlot=0;
 
-const libEl=document.getElementById('library');
 const noteEl=document.getElementById('note');
-const slots=[document.getElementById('slot0'),document.getElementById('slot1'),document.getElementById('slot2'),document.getElementById('slot3')];
+const slots=[
+  document.getElementById('slot0'),
+  document.getElementById('slot1'),
+  document.getElementById('slot2'),
+  document.getElementById('slot3'),
+  document.getElementById('slot4'),
+  document.getElementById('slot5'),
+  document.getElementById('slot6'),
+  document.getElementById('slot7'),
+  document.getElementById('slot8')
+];
 const statusEl=document.getElementById('status');
 const bpm=document.getElementById('bpm'), bpmVal=document.getElementById('bpmVal');
 const transportRow = document.getElementById('transportRow');
 const bpmRow = document.getElementById('bpmRow');
 const bpmStepGroup = document.getElementById('bpmStepGroup');
-const clearBtn = document.getElementById('clearBtn');
 function placeStepGroup(){
   if(!transportRow || !bpmRow || !bpmStepGroup) return;
   const portrait = document.body.classList.contains('portrait');
@@ -440,26 +535,10 @@ function stepDurationSec(){
   return 60/(v*4);
 }
 
-/* === Pattern combine === */
-function buildCombined(){
-  const chosen = selectedObjs.filter(o=>o);
-  if(chosen.length===0) return null;
-  const total = chosen.reduce((acc,o)=>acc+o.TILE_STEPS, 0);
-  const out = { total, hh:Array(total).fill(0), sd:Array(total).fill(0), bd:Array(total).fill(0), tileBounds:[] };
-  let base=0;
-  chosen.forEach(o=>{
-    o.hh.forEach(ix=>{ if(base+ix<total) out.hh[base+ix]=1; });
-    o.sd.forEach(ix=>{ if(base+ix<total) out.sd[base+ix]=1; });
-    o.bd.forEach(ix=>{ if(base+ix<total) out.bd[base+ix]=1; });
-    base += o.TILE_STEPS;
-    out.tileBounds.push(base);
-  });
-  return out;
-}
 
 /* === Slot highlight === */
 function updateSlotHighlight(activeIdx){
-  for(let i=0;i<4;i++){
+  for(let i=0;i<slots.length;i++){
     const el=slots[i]; if(!el) continue;
     if(i===activeIdx) el.classList.add('playing'); else el.classList.remove('playing');
   }
@@ -468,65 +547,181 @@ function clearSlotHighlight(){ slots.forEach(el=>el.classList.remove('playing'))
 
 /* === Scheduler === */
 function schedule(){
-  const ctx=ensureCtx(); const P=buildCombined(); if(!P) return;
-  const stepDur=stepDurationSec(); const total = P.total;
+  const ctx = ensureCtx();
+  const stepDur = stepDurationSec();
+  const INTRO_STEPS = 16;           // 4박(4비트) * 4스텝(16분음표) = 16스텝
+  const INTRO_CLICK_INTERVAL = 4;   // 4스텝마다 한 번씩 클릭 (4분음표 기준 예비박)
+
   while(nextNoteTime < ctx.currentTime + 0.12){
-    const step = currentStep % total;
-    let tileIdx = 0; while(tileIdx < P.tileBounds.length && step >= P.tileBounds[tileIdx]) tileIdx++;
-    updateSlotHighlight(tileIdx);
-    const t=nextNoteTime;
-    if(P.hh[step]) playHat(t);
-    if(P.sd[step]) playSnare(t);
-    if(P.bd[step]) playKick(t);
-    nextNoteTime += stepDur; currentStep = (currentStep + 1) % total;
+    const t = nextNoteTime;
+
+    // 1) 예비박(4카운트) 구간
+    if(isIntroPhase){
+      if(introStep % INTRO_CLICK_INTERVAL === 0){
+        // 예비 카운트는 하이햇으로 표시
+        playHat(t);
+      }
+      introStep++;
+      nextNoteTime += stepDur;
+      if(introStep >= INTRO_STEPS){
+        // 예비박이 끝나면 슬롯 재생을 처음부터 시작
+        isIntroPhase = false;
+        clearSlotHighlight();
+        slotIndex = 0;
+        slotRepeat = 0;
+        stepInSlot = 0;
+      }
+      continue;
+    }
+
+    // 2) 본 패턴 재생 (슬롯별, 각 슬롯 2회씩)
+    if(!slotOrder || slotOrder.length === 0){
+      // 재생할 슬롯이 없으면 정지
+      stop();
+      break;
+    }
+
+    // 모든 슬롯을 다 재생했으면: BPM +10 (최대 200) 후 다시 예비박
+    if(slotIndex >= slotOrder.length){
+      const curBpm = parseInt(bpm.value, 10);
+      if(curBpm < 200){
+        const newBpm = Math.min(200, curBpm + 10);
+        bpm.value = newBpm;
+        bpmVal.textContent = newBpm;
+      }
+      // 다음 사이클: 예비박(4카운트)부터 다시 시작
+      isIntroPhase = true;
+      introStep = 0;
+      slotIndex = 0;
+      slotRepeat = 0;
+      stepInSlot = 0;
+      clearSlotHighlight();
+      continue;
+    }
+
+    const idx = slotOrder[slotIndex];
+    const tile = selectedObjs[idx];
+    if(!tile){
+      // 비어있는 슬롯은 건너뛰기
+      slotIndex++;
+      slotRepeat = 0;
+      stepInSlot = 0;
+      continue;
+    }
+
+    const stepsInTile = tile.TILE_STEPS || 0;
+    if(stepsInTile <= 0){
+      // 재생 스텝이 없는 패턴도 건너뛰기
+      slotIndex++;
+      slotRepeat = 0;
+      stepInSlot = 0;
+      continue;
+    }
+
+    // 현재 슬롯 하이라이트
+    updateSlotHighlight(idx);
+
+    const s = stepInSlot;
+    if(tile.hh && tile.hh.includes(s)) playHat(t);
+    if(tile.sd && tile.sd.includes(s)) playSnare(t);
+    if(tile.bd && tile.bd.includes(s)) playKick(t);
+
+    stepInSlot++;
+    nextNoteTime += stepDur;
+
+    // 현재 슬롯 패턴이 끝난 경우
+    if(stepInSlot >= stepsInTile){
+      stepInSlot = 0;
+      slotRepeat++;
+      if(slotRepeat >= 2){
+        // 현재 슬롯 2회 재생 완료 → 다음 슬롯으로
+        slotRepeat = 0;
+        slotIndex++;
+      }
+    }
   }
 }
 
 /* === Transport === */
 function start(){
-  if(selectedObjs.every(o=>!o)){ statusEl.textContent='Pick at least 1 tile.'; return; }
-  ensureCtx().resume(); isPlaying=true; currentStep=0; nextNoteTime=ensureCtx().currentTime+0.05;
-  timer=setInterval(schedule,25); statusEl.textContent='';
+  if(selectedObjs.every(o=>!o)){
+    statusEl.textContent='Pick at least 1 tile.';
+    return;
+  }
+
+  // 재생할 슬롯 순서 구성 (비어있지 않은 슬롯만)
+  slotOrder = [];
+  for(let i=0;i<selectedObjs.length;i++){
+    if(selectedObjs[i]) slotOrder.push(i);
+  }
+  if(slotOrder.length === 0){
+    statusEl.textContent='Pick at least 1 tile.';
+    return;
+  }
+
+  const ctx = ensureCtx();
+  ctx.resume();
+  isPlaying = true;
+  // 예비박(4카운트)부터 시작
+  isIntroPhase = true;
+  introStep = 0;
+  slotIndex = 0;
+  slotRepeat = 0;
+  stepInSlot = 0;
+  nextNoteTime = ctx.currentTime + 0.05;
+  timer = setInterval(schedule,25);
+  statusEl.textContent = '';
 }
 function stop(){
-  if(timer) clearInterval(timer); timer=null; isPlaying=false; clearSlotHighlight();
+  if(timer) clearInterval(timer);
+  timer = null;
+  isPlaying = false;
+  clearSlotHighlight();
+  // 재생 상태 초기화
+  isIntroPhase = false;
+  introStep = 0;
+  slotOrder = [];
+  slotIndex = 0;
+  slotRepeat = 0;
+  stepInSlot = 0;
 }
 
 /* === UI rendering === */
-const libElInit = () => {
-  libEl.innerHTML='';
-  PATTERNS.forEach(p=>{
-    const card=document.createElement('div'); card.className='tile';
-    card.innerHTML=`<div class="top"><span class="id">#${p.id}</span><span class="name">${p.name}</span></div>
-                    <img src="${p.img}" alt="${p.name}">`;
-    card.addEventListener('click',()=>{
-      const idx = selectedObjs.findIndex(x=>!x);
-      if(idx===-1) return;
-      const obj = currentPatternObjectById(p.id);
-      if(!obj) return;
-      selectedObjs[idx]=obj;
-      renderSelection();
-    });
-    libEl.appendChild(card);
-  });
-};
 function renderSelection(){
   clearSlotHighlight();
-  for(let i=0;i<4;i++){
-    const el=slots[i]; el.innerHTML='';
+  for(let i=0;i<slots.length;i++){
+    const el=slots[i]; if(!el) continue;
+    el.innerHTML='';
     const obj=selectedObjs[i];
-    if(!obj){ el.classList.remove('filled'); el.innerHTML=`<span class="chip">Slot ${i+1}</span>`; }
-    else{ el.classList.add('filled'); el.innerHTML=`<img src="${obj.img}" alt="Pattern ${obj.id}">`; }
+    if(!obj){
+      el.classList.remove('filled');
+      el.innerHTML=`<span class="chip">Slot ${i+1}</span>`;
+    } else {
+      el.classList.add('filled');
+      el.innerHTML=`<img src="${obj.img}" alt="Pattern ${obj.id}">`;
+    }
   }
 }
 
 /* === Mode switching === */
 function setMode(m){
   if(isPlaying) stop();
-  MODE=m; CONF=MODES[MODE]; PATTERNS=CONF.patterns.slice();
-  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.mode===MODE));
+  MODE = m;
+  CONF = MODES[MODE];
+  PATTERNS = CONF.patterns.slice();
+
+  // 기본값: 현재 모드의 Tile 0~8을 Slot 1~9에 순서대로 채우기
+  selectedObjs = [];
+  for (let i = 0; i < 9; i++){
+    const obj = currentPatternObjectById(i);
+    selectedObjs.push(obj || null);
+  }
+
+  document.querySelectorAll('.tab').forEach(t =>
+    t.classList.toggle('active', t.dataset.mode === MODE)
+  );
   document.getElementById('note').textContent = CONF.note; /* 4모드는 빈 문자열 */
-  libElInit(); renderSelection();
+  renderSelection();
 }
 
 /* === Device detection helpers === */
@@ -629,10 +824,25 @@ window.addEventListener('orientationchange', updateOrientationClasses);
 window.addEventListener('resize', updateOrientationClasses);
 
 /* === Events === */
+// Study / Maker 모드 전환
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const target = btn.dataset.mode;
+    if(target === 'maker'){
+      // Maker 모드 페이지로 이동 (같은 폴더 내 Beat Maker.html)
+      window.location.href = 'Beat Maker.html';
+    } else {
+      // Study 모드: 현재 페이지이므로 이동 없이 활성 상태만 표시
+      document.querySelectorAll('.mode-btn').forEach(b =>
+        b.classList.toggle('active', b === btn)
+      );
+    }
+  });
+});
+
 document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click', ()=>setMode(t.dataset.mode)));
 document.getElementById('startBtn').addEventListener('click', start);
 document.getElementById('stopBtn').addEventListener('click', stop);
-document.getElementById('clearBtn').addEventListener('click', ()=>{ selectedObjs=[null,null,null,null]; renderSelection(); stop(); });
 
 bpm.addEventListener('input', ()=>{ bpmVal.textContent=bpm.value; });
 document.querySelectorAll('button[data-step]').forEach(btn=>btn.addEventListener('click',()=>{
@@ -656,9 +866,10 @@ document.addEventListener('keydown',(e)=>{
       updateOrientationClasses();
       return;
     }
-    selectedObjs=[null,null,null,null]; renderSelection(); stop();
+    selectedObjs=[null,null,null,null,null,null,null,null,null];
+    renderSelection();
+    stop();
   }
-  else if(e.code==='Backspace'){ e.preventDefault(); for(let i=3;i>=0;i--){ if(selectedObjs[i]){ selectedObjs[i]=null; break; } } renderSelection(); }
   else if(e.code==='ArrowLeft'){ let v=Math.max(60, parseInt(bpm.value,10)-5); bpm.value=v; bpmVal.textContent=v; }
   else if(e.code==='ArrowRight'){ let v=Math.min(200, parseInt(bpm.value,10)+5); bpm.value=v; bpmVal.textContent=v; }
   else if(e.key==='f' || e.key==='F' || e.code==='KeyF'){ e.preventDefault(); fsToggle(); }

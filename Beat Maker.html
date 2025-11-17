@@ -1,0 +1,764 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Nick Drum Beat Maker (Mix, Original Timing) – Glass UI</title>
+<style>
+  :root{
+    --bg-grad: linear-gradient(135deg, #bfeee3 0%, #ffd8ba 50%, #bcd9f5 100%);
+    --card: rgba(255,255,255,0.65);
+    --section: rgba(245,248,250,.85);
+    --text: #1c2c38;
+    --sub: #385858;
+
+    --radius: clamp(12px, 1.6vw, 16px);
+    --gap: clamp(12px, 2.2vw, 20px);
+
+    --fs-title: clamp(40px, 7vw, 86px);
+
+    --line: rgba(100,150,200,0.22);
+    --line-strong: rgba(100,150,200,0.35);
+    --hover: rgba(200,230,250,0.15);
+    --chip-bg: rgba(200,230,250,.32);
+  }
+
+  *{ box-sizing: border-box; }
+  html, body { height: 100%; min-height: 100dvh; }
+  body{
+    margin:0;
+    color:var(--text);
+    background: var(--bg-grad) fixed;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, 'Apple Color Emoji','Segoe UI Emoji','Segoe UI Symbol';
+    -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    overflow:hidden; /* 데스크톱/태블릿에서 스케일 시 넘침 방지 */
+  }
+
+  /* 스테이지: 데스크톱/태블릿에서 가로 중앙 정렬, 세로 상단 정렬 */
+  #stage{
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;           /* 모바일 주소창 보정 */
+    display: flex;
+    justify-content: center;  /* 가로 중앙 */
+    align-items: flex-start;  /* 세로 상단 */
+    overflow: hidden;
+  }
+
+  /* 스케일 대상 */
+  #scaleWrap { transform-origin: top center; }
+
+  header{
+    padding: clamp(36px, 6vw, 64px) 20px clamp(20px, 4vw, 40px);
+    text-align:center; position:relative; overflow:hidden; isolation:isolate;
+  }
+  h1.title{
+    margin:0;
+    font-size: var(--fs-title);
+    font-weight: 800;
+    background: linear-gradient(90deg, #ffffff, #cfeae1);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    -webkit-text-fill-color:transparent; -webkit-text-stroke:1px black;
+  }
+
+  main{ max-width: min(1320px, 96vw); margin: clamp(12px,3vw,28px) auto clamp(36px,6vw,56px); padding: 0 clamp(8px,2vw,16px); }
+
+  .card{
+    background: var(--card);
+    backdrop-filter: blur(8px);
+    border: 0;
+    border-radius: var(--radius);
+    box-shadow: 0 12px 28px rgba(100,150,200,.22);
+    padding: clamp(18px, 2.8vw, 32px);
+  }
+  .section{
+    background: var(--section);
+    border-radius: var(--radius);
+    box-shadow: 0 8px 18px rgba(100,150,200,.18);
+    padding: clamp(12px, 2vw, 20px);
+    border: 1px solid var(--line);
+  }
+
+  .row{ display:flex; gap: clamp(8px,1.4vw,12px); align-items:center; flex-wrap: wrap; }
+  /* Center controls in landscape; keep existing behavior in portrait */
+  .controlsWrap{ gap: var(--gap); justify-content: space-between; }
+  body.landscape .controlsWrap{ justify-content: center; }
+  .controlsWrap > .row{ align-items: center; }
+  .chip{ display:inline-block; font-size: 12px; color: var(--sub); padding: 2px 8px; border-radius: 999px; background: var(--chip-bg); border:1px solid rgba(100,150,200,.18); }
+
+  /* Buttons */
+  .btn{
+    min-height: clamp(38px, 5.2vw, 48px);
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    border-radius: clamp(10px, 1.5vw, 12px);
+    border: 1px solid var(--line);
+    background: rgba(255,255,255,0.55);
+    color: var(--text);
+    padding: 10px 16px;
+    font-weight: 700;
+    cursor:pointer;
+    transition: transform .15s ease, box-shadow .2s ease, background .25s ease, border-color .2s ease;
+  }
+  .btn:hover{ transform: translateY(-1px); box-shadow: 0 4px 12px rgba(100,150,200,0.15); background: var(--hover); border-color: var(--line-strong); }
+
+  .modeToggle{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-right:16px;
+  }
+  .mode-btn{
+    min-height: 48px;           /* 32px * 1.5 */
+    padding: 9px 18px;          /* 6px/12px * 1.5 */
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: rgba(255,255,255,0.55);
+    font-size: 20px;            /* ~13px * 1.5 */
+    font-weight: 600;
+    color: var(--sub);
+    cursor:pointer;
+    transition: background .2s ease, border-color .2s ease, box-shadow .2s ease, transform .12s ease;
+  }
+  .mode-btn:hover{
+    background: var(--hover);
+    border-color: var(--line-strong);
+    box-shadow: 0 3px 8px rgba(100,150,200,0.18);
+    transform: translateY(-1px);
+  }
+  .mode-btn.active{
+    background: rgba(255,255,255,0.9);
+    box-shadow: 0 0 0 2px rgba(100,150,200,0.25) inset;
+    border-color: var(--line-strong);
+  }
+
+  input[type=range]{ width: 220px; accent-color: #6aa9e9; }
+  .value{ width:56px; text-align:right; font-feature-settings:'tnum'; font-variant-numeric:tabular-nums; color: var(--sub); }
+  .warn{ color:#a15c00; font-size: 12px; margin-left: 6px; }
+
+  /* Slots */
+  .selection{ display:grid; grid-template-columns: repeat(4, 1fr); gap: var(--gap); }
+  .slot{
+    /* min-height: 140px; */
+    aspect-ratio: 16 / 10; /* 일정 비율 유지로 세로 증가 방지 */
+    border:1px solid var(--line);
+    border-radius: 12px;
+    display:flex; align-items:center; justify-content:center; padding:6px;
+    background: rgba(255,255,255,.55);
+    transition: box-shadow .12s ease, border-color .12s ease, transform .08s ease;
+    overflow: hidden; /* 내부 이미지 튀어나옴 방지 */
+  }
+  .slot.filled{ border-color: var(--line-strong); }
+  .slot img{
+    width:100%;
+    height:100%;
+    object-fit: contain;           /* 가로/세로 모두 비율 유지 */
+    border-radius: 8px; background:#fff; border:1px solid rgba(100,150,200,.26);
+  }
+  .slot.playing{
+    border-color: #6aa9e9 !important;
+    box-shadow: 0 0 0 2px #6aa9e9 inset, 0 0 16px rgba(106,169,233,0.45);
+  }
+
+  /* Tabs / Tiles */
+  .tabs{ display:flex; gap: var(--gap); margin-top: clamp(12px,1.8vw,16px); }
+  .tab{
+    flex:1; text-align:center; cursor:pointer;
+    padding: 12px; border-radius: 12px;
+    background: rgba(255,255,255,.45);
+    color: var(--text);
+    border: 1px solid var(--line);
+    transition: background .2s ease, box-shadow .2s ease, border-color .2s ease;
+  }
+  .tab:hover{ background: var(--hover); border-color: var(--line-strong); }
+  .tab.active{ background: rgba(255,255,255,.65); box-shadow: 0 0 0 2px rgba(100,150,200,.22) inset; }
+
+  .grid{ display:grid; gap: var(--gap); }
+  .grid.cols-3{ grid-template-columns: minmax(0, 1fr); } /* 한 컬럼 안에 줄(row) 단위로 배치 */
+  .tile-row{
+    display:flex;
+    gap: var(--gap);
+    margin-bottom: calc(var(--gap) * 0.45); /* 세로 간격 약 절반 수준으로 축소 */
+    justify-content:flex-start;
+    align-items:flex-start;
+  }
+  .tile-row:last-child{
+    margin-bottom: 0; /* 마지막 줄은 카드 하단 여백과 겹치지 않도록 */
+  }
+  .tile{
+    background: rgba(255,255,255,.55);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 8px;
+    cursor:pointer;
+    transition: transform .08s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease;
+    /* 각 타일을 동일 폭으로: 한 줄에 4개 기준 */
+    flex: 0 0 calc((100% - 3 * var(--gap)) / 4);
+    max-width: calc((100% - 3 * var(--gap)) / 4);
+  }
+  .tile:hover{
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(100,150,200,0.18);
+    background: var(--hover);
+    border-color: var(--line-strong);
+  }
+  .tile img{
+    width: 100%;
+    height: auto;            /* 세로 화면에서 가로 그림 잘림 방지 */
+    object-fit: contain;
+    border-radius: 10px;
+    background:#fff;
+    border:1px solid rgba(100,150,200,.26);
+  }
+
+  .note{ font-size: 12px; color: var(--sub); margin-top: 8px; }
+
+  /* ─────────────────────────────────────────────────────
+     휴대폰(Phone) 전용: pointer:coarse + 화면폭 ≤ 600px
+     태블릿은 데스크톱 규칙 유지
+     ───────────────────────────────────────────────────── */
+  @media (hover: none) and (pointer: coarse) and (max-width: 600px){
+    body{ overflow:auto; }                         /* 스케일 해제 시 스크롤 허용 */
+    #stage{ align-items: flex-start; }             /* 상단 정렬 */
+    #scaleWrap{ transform: none !important; width: 100% !important; }
+    .selection{ grid-template-columns: 1fr; }      /* 1열 */
+    .grid.cols-3{ grid-template-columns: 1fr; }    /* 1열 */
+    header{ padding-top: 28px; }
+  }
+. 
+  /* ── Portrait / Fullscreen support ───────────────────────────────── */
+  /* iOS/Android safe area when in fullscreen */
+  body.fs-on.portrait{
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+  /* Portrait orientation: keep original columns; only contain images */
+  @media (orientation: portrait){
+    #stage{ align-items: flex-start; }
+    /* Keep original columns in portrait; no overrides for .selection or .grid.cols-3 */
+    #scaleWrap img{ max-width: 100%; height: auto; object-fit: contain; }
+  }
+
+/* --- Fullscreen button --- */
+.fs-btn {
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 9999px;
+  background: rgba(0,0,0,0.6);
+  color: #fff;
+  cursor: pointer;
+  transition: transform 120ms ease, background 120ms ease, box-shadow 120ms ease;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+  z-index: 1000;
+}
+.fs-btn:hover { background: rgba(0,0,0,0.75); transform: translateY(-1px); }
+.fs-btn:active { transform: translateY(0); }
+.fs-btn:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(255,255,255,0.5); }
+.icon { width: 22px; height: 22px; display: inline; }
+.icon.exit { display: none; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="scaleWrap">
+    <header>
+      <h1 class="title">Nick Drum Beat Maker</h1>
+      <!-- 안내문 2개 삭제됨 -->
+    </header>
+
+    <main>
+      <!-- Controls -->
+      <div class="card" style="margin-bottom: var(--gap);">
+        <div class="row controlsWrap">
+          <div class="row" id="transportRow">
+            <div class="modeToggle">
+              <button type="button" class="mode-btn" data-mode="study">Study</button>
+              <button type="button" class="mode-btn active" data-mode="maker">Maker</button>
+            </div>
+            <button id="startBtn" class="btn">Start</button>
+            <button id="stopBtn" class="btn">Stop</button> <!-- Start와 동일 스타일 -->
+            <button id="clearBtn" class="btn clear">Clear</button>
+          </div>
+          <div class="row" id="bpmRow">
+            <span class="chip">BPM</span>
+            <input id="bpm" type="range" min="60" max="200" value="60" /> <!-- 기본값 60 -->
+            <div id="bpmVal" class="value">60</div>
+            <div class="row" id="bpmStepGroup" style="gap:6px;margin-left:10px">
+              <button type="button" class="btn clear" data-step="-5">-5</button>
+              <button type="button" class="btn clear" data-step="-1">-1</button>
+              <button type="button" class="btn clear" data-step="1">+1</button>
+              <button type="button" class="btn clear" data-step="5">+5</button>
+            </div>
+            <div id="status" class="warn"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Selection -->
+      <div class="card" style="margin-bottom: var(--gap);">
+        <div class="selection" id="selection">
+          <div class="slot" id="slot0"><span class="chip">Slot 1</span></div>
+          <div class="slot" id="slot1"><span class="chip">Slot 2</span></div>
+          <div class="slot" id="slot2"><span class="chip">Slot 3</span></div>
+          <div class="slot" id="slot3"><span class="chip">Slot 4</span></div>
+        </div>
+        <div class="note" id="note"></div> <!-- 4 Beat의 노트 문구는 빈값으로 처리 -->
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <div class="tab active" data-mode="4">4 Beat</div>
+        <div class="tab" data-mode="8">8 Beat</div>
+        <div class="tab" data-mode="16">16 Beat</div>
+      </div>
+
+      <!-- Library -->
+      <h2 style="margin-top:18px; font-size:18px;">Tiles</h2>
+      <div class="grid cols-3 card" id="library" style="padding: clamp(12px,2vw,20px);"></div>
+    </main>
+
+ </div>
+</div>
+
+<button id="fsBtn" class="fs-btn" aria-label="전체화면 전환 (F)" title="전체화면 전환 (F)" aria-pressed="false">
+  <!-- Enter fullscreen icon -->
+  <svg class="icon enter" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M4 10V4h6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M20 14v6h-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M4 4l7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    <path d="M20 20l-7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+  </svg>
+  <!-- Exit fullscreen icon -->
+  <svg class="icon exit" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M10 4H4v6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M14 20h6v-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M11 11L4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    <path d="M13 13l7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+  </svg>
+</button>
+
+<script>
+/* ==== Patterns ==== */
+const P4 = [
+  { id:0, name:"Pattern 1", img:"Images/4beat/1.png", hh:[0,2], sd:[2], bd:[] },
+  { id:1, name:"Pattern 2", img:"Images/4beat/2.png", hh:[0,2], sd:[2], bd:[0] },
+  { id:2, name:"Pattern 3", img:"Images/4beat/3.png", hh:[0,2], sd:[2], bd:[1] },
+  { id:3, name:"Pattern 4", img:"Images/4beat/4.png", hh:[0,2], sd:[2], bd:[2] },
+  { id:4, name:"Pattern 5", img:"Images/4beat/5.png", hh:[0,2], sd:[2], bd:[3] },
+  { id:5, name:"Pattern 6", img:"Images/4beat/6.png", hh:[0,2], sd:[2], bd:[0, 1] },
+  { id:6, name:"Pattern 7", img:"Images/4beat/7.png", hh:[0,2], sd:[2], bd:[0, 3] },
+  { id:7, name:"Pattern 8", img:"Images/4beat/8.png", hh:[0,2], sd:[2], bd:[0, 2] },
+  { id:8, name:"Pattern 9", img:"Images/4beat/9.png", hh:[0,2], sd:[2], bd:[1, 3] }
+];
+const P8 = [
+  { id:0, name:"Pattern 1", img:'Images/8beat/1.png', hh:[0,1,2,3], sd:[2], bd:[] },
+  { id:1, name:"Pattern 2", img:'Images/8beat/2.png', hh:[0,1,2,3], sd:[2], bd:[0] },
+  { id:2, name:"Pattern 3", img:'Images/8beat/3.png', hh:[0,1,2,3], sd:[2], bd:[1] },
+  { id:3, name:"Pattern 4", img:'Images/8beat/4.png', hh:[0,1,2,3], sd:[2], bd:[2] },
+  { id:4, name:"Pattern 5", img:'Images/8beat/5.png', hh:[0,1,2,3], sd:[2], bd:[3] },
+  { id:5, name:"Pattern 6", img:'Images/8beat/6.png', hh:[0,1,2,3], sd:[2], bd:[0, 1] },
+  { id:6, name:"Pattern 7", img:'Images/8beat/7.png', hh:[0,1,2,3], sd:[2], bd:[0, 3] },
+  { id:7, name:"Pattern 8", img:'Images/8beat/8.png', hh:[0,1,2,3], sd:[2], bd:[0, 2] },
+  { id:8, name:"Pattern 9", img:'Images/8beat/9.png', hh:[0,1,2,3], sd:[2], bd:[1, 3] }
+];
+const P16 = [
+  { id:0, name:'Pattern 1', img:'Images/16beat/1.png', hh:[0,1,2,3,4,5,6,7], bd:[], sd:[4] },
+  { id:1, name:'Pattern 2', img:'Images/16beat/2.png', hh:[0,1,2,3,4,5,6,7], bd:[0], sd:[4] },
+  { id:2, name:'Pattern 3', img:'Images/16beat/3.png', hh:[0,1,2,3,4,5,6,7], bd:[2], sd:[4] },
+  { id:3, name:'Pattern 4', img:'Images/16beat/4.png', hh:[0,1,2,3,4,5,6,7], bd:[4], sd:[4] },
+  { id:4, name:'Pattern 5', img:'Images/16beat/5.png', hh:[0,1,2,3,4,5,6,7], bd:[6], sd:[4] },
+  { id:5, name:'Pattern 6', img:'Images/16beat/6.png', hh:[0,1,2,3,4,5,6,7], bd:[0, 2], sd:[4] },
+  { id:6, name:'Pattern 7', img:'Images/16beat/7.png', hh:[0,1,2,3,4,5,6,7], bd:[0, 6], sd:[4] },
+  { id:7, name:'Pattern 8', img:'Images/16beat/8.png', hh:[0,1,2,3,4,5,6,7], bd:[0, 4], sd:[4] },
+  { id:8, name:'Pattern 9', img:'Images/16beat/9.png', hh:[0,1,2,3,4,5,6,7], bd:[2, 6], sd:[4] }
+];
+
+const MODES = {
+  "4":  { title:"4 Beat",  patterns:P4,  tileSteps:4,  stepType:"eighth",    note:"" }, /* 4모드 노트 삭제 */
+  "8":  { title:"8 Beat",  patterns:P8,  tileSteps:4,  stepType:"eighth",    note:"" },
+  "16": { title:"16 Beat", patterns:P16, tileSteps:8,  stepType:"sixteenth", note:"" }
+};
+
+function toSixteenthPattern(p, stepType, tileSteps){
+  const mul = (stepType==='eighth') ? 2 : 1;
+  const map = arr => (arr||[]).map(v => v*mul);
+  return { id:p.id, name:p.name, img:p.img, hh:map(p.hh), sd:map(p.sd), bd:map(p.bd), TILE_STEPS: tileSteps * mul };
+}
+function currentPatternObjectById(id){
+  const conf = MODES[MODE];
+  const src = conf.patterns.find(x=>x.id===id);
+  if(!src) return null;
+  return toSixteenthPattern(src, conf.stepType, conf.tileSteps);
+}
+
+/* === State === */
+let MODE="4";
+let CONF=MODES[MODE];
+let PATTERNS=CONF.patterns.slice();
+let selectedObjs=[null,null,null,null];
+let isPlaying=false, nextNoteTime=0, currentStep=0, timer=null;
+
+const libEl=document.getElementById('library');
+const noteEl=document.getElementById('note');
+const slots=[document.getElementById('slot0'),document.getElementById('slot1'),document.getElementById('slot2'),document.getElementById('slot3')];
+const statusEl=document.getElementById('status');
+const bpm=document.getElementById('bpm'), bpmVal=document.getElementById('bpmVal');
+const transportRow = document.getElementById('transportRow');
+const bpmRow = document.getElementById('bpmRow');
+const bpmStepGroup = document.getElementById('bpmStepGroup');
+const clearBtn = document.getElementById('clearBtn');
+function placeStepGroup(){
+  if(!transportRow || !bpmRow || !bpmStepGroup) return;
+  const portrait = document.body.classList.contains('portrait');
+  if(portrait){
+    // Start/Stop/Clear 우측으로 이동
+    transportRow.appendChild(bpmStepGroup);
+    bpmStepGroup.style.marginLeft = '8px';
+  } else {
+    // BPM 슬라이더 옆 원래 자리로 복귀 (status 앞)
+    bpmStepGroup.style.marginLeft = '10px';
+    if (bpmRow.contains(document.getElementById('status'))){
+      bpmRow.insertBefore(bpmStepGroup, document.getElementById('status'));
+    } else {
+      bpmRow.appendChild(bpmStepGroup);
+    }
+  }
+}
+
+/* === Audio === */
+let audioCtx, masterGain, reverb;
+function ensureCtx(){
+  if(!audioCtx){
+    const AC = window.AudioContext || window.webkitAudioContext;
+    audioCtx = new AC();
+    masterGain = audioCtx.createGain(); masterGain.gain.value = 0.9; masterGain.connect(audioCtx.destination);
+    reverb = audioCtx.createConvolver(); reverb.buffer = createReverbIR(audioCtx, 1.5, 2.5); reverb.connect(masterGain);
+  }
+  return audioCtx;
+}
+function createReverbIR(ctx, seconds=1.5, decay=2.5){
+  const rate=ctx.sampleRate, length=Math.floor(rate*seconds);
+  const buf=ctx.createBuffer(2,length,rate);
+  for(let ch=0;ch<2;ch++){
+    const d=buf.getChannelData(ch);
+    for(let i=0;i<length;i++){ const t=i/length; d[i]=(Math.random()*2-1)*Math.pow(1-t,decay); }
+  }
+  return buf;
+}
+function playKick(time){
+  const ctx=ensureCtx();
+  const osc=ctx.createOscillator(); osc.type='sine';
+  osc.frequency.setValueAtTime(150,time); osc.frequency.exponentialRampToValueAtTime(50,time+0.12);
+  const g=ctx.createGain(); g.gain.setValueAtTime(1.0,time); g.gain.exponentialRampToValueAtTime(0.001,time+0.14);
+  osc.connect(g); g.connect(masterGain); g.connect(reverb);
+  osc.start(time); osc.stop(time+0.16);
+}
+function playSnare(time){
+  const ctx=ensureCtx();
+  const nb=ctx.createBuffer(1, ctx.sampleRate*0.25, ctx.sampleRate);
+  const d=nb.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+  const src=ctx.createBufferSource(); src.buffer=nb;
+  const bp=ctx.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=2000; bp.Q.value=0.7;
+  const hp=ctx.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=900;
+  const g=ctx.createGain(); g.gain.setValueAtTime(1.0,time); g.gain.exponentialRampToValueAtTime(0.001,time+0.18);
+  src.connect(bp).connect(hp).connect(g); g.connect(masterGain); g.connect(reverb);
+  src.start(time); src.stop(time+0.22);
+}
+function playHat(time){
+  const ctx=ensureCtx();
+  const nb=ctx.createBuffer(1, ctx.sampleRate*0.08, ctx.sampleRate);
+  const d=nb.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+  const src=ctx.createBufferSource(); src.buffer=nb;
+  const hp=ctx.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=8000;
+  const g=ctx.createGain(); g.gain.setValueAtTime(0.6,time); g.gain.exponentialRampToValueAtTime(0.001,time+0.06);
+  src.connect(hp).connect(g); g.connect(masterGain); g.connect(reverb);
+  src.start(time); src.stop(time+0.08);
+}
+
+/* === Timing === */
+function stepDurationSec(){
+  const v=parseInt(bpm.value,10);
+  return 60/(v*4);
+}
+
+/* === Pattern combine === */
+function buildCombined(){
+  const chosen = selectedObjs.filter(o=>o);
+  if(chosen.length===0) return null;
+  const total = chosen.reduce((acc,o)=>acc+o.TILE_STEPS, 0);
+  const out = { total, hh:Array(total).fill(0), sd:Array(total).fill(0), bd:Array(total).fill(0), tileBounds:[] };
+  let base=0;
+  chosen.forEach(o=>{
+    o.hh.forEach(ix=>{ if(base+ix<total) out.hh[base+ix]=1; });
+    o.sd.forEach(ix=>{ if(base+ix<total) out.sd[base+ix]=1; });
+    o.bd.forEach(ix=>{ if(base+ix<total) out.bd[base+ix]=1; });
+    base += o.TILE_STEPS;
+    out.tileBounds.push(base);
+  });
+  return out;
+}
+
+/* === Slot highlight === */
+function updateSlotHighlight(activeIdx){
+  for(let i=0;i<4;i++){
+    const el=slots[i]; if(!el) continue;
+    if(i===activeIdx) el.classList.add('playing'); else el.classList.remove('playing');
+  }
+}
+function clearSlotHighlight(){ slots.forEach(el=>el.classList.remove('playing')); }
+
+/* === Scheduler === */
+function schedule(){
+  const ctx=ensureCtx(); const P=buildCombined(); if(!P) return;
+  const stepDur=stepDurationSec(); const total = P.total;
+  while(nextNoteTime < ctx.currentTime + 0.12){
+    const step = currentStep % total;
+    let tileIdx = 0; while(tileIdx < P.tileBounds.length && step >= P.tileBounds[tileIdx]) tileIdx++;
+    updateSlotHighlight(tileIdx);
+    const t=nextNoteTime;
+    if(P.hh[step]) playHat(t);
+    if(P.sd[step]) playSnare(t);
+    if(P.bd[step]) playKick(t);
+    nextNoteTime += stepDur; currentStep = (currentStep + 1) % total;
+  }
+}
+
+/* === Transport === */
+function start(){
+  if(selectedObjs.every(o=>!o)){ statusEl.textContent='Pick at least 1 tile.'; return; }
+  ensureCtx().resume(); isPlaying=true; currentStep=0; nextNoteTime=ensureCtx().currentTime+0.05;
+  timer=setInterval(schedule,25); statusEl.textContent='';
+}
+function stop(){
+  if(timer) clearInterval(timer); timer=null; isPlaying=false; clearSlotHighlight();
+}
+
+/* === UI rendering === */
+const libElInit = () => {
+  libEl.innerHTML = '';
+
+  // 원하는 줄 배열: 0번 / 1,2,3,4번 / 5,6,7,8번
+  const groups = [
+    [0],
+    [1, 2, 3, 4],
+    [5, 6, 7, 8]
+  ];
+
+  groups.forEach(indices => {
+    const row = document.createElement('div');
+    row.className = 'tile-row';
+
+    indices.forEach(i => {
+      const p = PATTERNS[i];
+      if (!p) return;
+
+      const card = document.createElement('div');
+      card.className = 'tile';
+      // Pattern 1, Pattern 2 등의 텍스트는 제거하고 이미지만 표시
+      card.innerHTML = `<img src="${p.img}" alt="${p.name}">`;
+
+      card.addEventListener('click', () => {
+        const idx = selectedObjs.findIndex(x => !x);
+        if (idx === -1) return;
+        const obj = currentPatternObjectById(p.id);
+        if (!obj) return;
+        selectedObjs[idx] = obj;
+        renderSelection();
+      });
+
+      row.appendChild(card);
+    });
+
+    libEl.appendChild(row);
+  });
+};
+function renderSelection(){
+  clearSlotHighlight();
+  for(let i=0;i<4;i++){
+    const el=slots[i]; el.innerHTML='';
+    const obj=selectedObjs[i];
+    if(!obj){ el.classList.remove('filled'); el.innerHTML=`<span class="chip">Slot ${i+1}</span>`; }
+    else{ el.classList.add('filled'); el.innerHTML=`<img src="${obj.img}" alt="Pattern ${obj.id}">`; }
+  }
+}
+
+/* === Mode switching === */
+function setMode(m){
+  if(isPlaying) stop();
+  MODE=m; CONF=MODES[MODE]; PATTERNS=CONF.patterns.slice();
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.mode===MODE));
+  document.getElementById('note').textContent = CONF.note; /* 4모드는 빈 문자열 */
+  libElInit(); renderSelection();
+}
+
+/* === Device detection helpers === */
+function isPhoneLike(){
+  // 휴대폰 판별: 미디어쿼리 + 폭 기준
+  const mq = window.matchMedia('(hover: none) and (pointer: coarse) and (max-width: 600px)');
+  if (mq && typeof mq.matches === 'boolean') return mq.matches;
+  // 보조: UA + 폭
+  const ua = navigator.userAgent.toLowerCase();
+  const maybeMobile = /android|iphone|ipod|mobile|samsungbrowser/.test(ua);
+  return maybeMobile && window.innerWidth <= 600;
+}
+
+/* === Vertical-first fit (데스크톱/태블릿 전용) === */
+function applyVerticalFit(){
+  const wrap = document.getElementById('scaleWrap');
+  const stage = document.getElementById('stage');
+  if(!wrap || !stage) return;
+
+  // 휴대폰에서는 스케일 해제 (CSS 미디어쿼리와 중복 방어)
+  if (isPhoneLike()){
+    wrap.style.transform = 'none';
+    wrap.style.width = '100%';
+    return;
+  }
+
+  // 데스크톱/태블릿: 세로 우선 + 가로 안전
+  wrap.style.transform = 'scale(1)';
+  wrap.style.width = 'auto';
+
+  const contentH = wrap.scrollHeight;
+  const contentW = wrap.scrollWidth;
+  const viewH = stage.clientHeight;
+  const viewW = stage.clientWidth;
+  if(contentH <= 0 || contentW <= 0) return;
+
+  let scaleH = viewH / contentH;
+  let scale  = scaleH;
+  if (contentW * scaleH > viewW) {
+    const scaleW = viewW / contentW;
+    scale = Math.min(scaleH, scaleW);
+  }
+  wrap.style.transform = `scale(${scale})`;
+  wrap.style.width = `calc(100% / ${scale})`; /* 가운데 정렬 유지 */
+}
+
+/* === Fullscreen helpers === */
+const fsBtn = document.getElementById('fsBtn');
+const fsEnterIcon = fsBtn ? fsBtn.querySelector('.icon.enter') : null;
+const fsExitIcon  = fsBtn ? fsBtn.querySelector('.icon.exit')  : null;
+const isFullscreenNow = () => document.fullscreenElement || document.webkitFullscreenElement;
+
+function updateOrientationClasses(){
+  const portrait = window.matchMedia('(orientation: portrait)').matches;
+  document.body.classList.toggle('portrait', portrait);
+  document.body.classList.toggle('landscape', !portrait);
+  document.body.classList.toggle('fs-on', !!isFullscreenNow());
+  // Recompute fit when state changes
+  applyVerticalFit();
+  placeStepGroup();
+}
+function fsEnter(el){
+  if (el.requestFullscreen) return el.requestFullscreen();
+  if (el.webkitRequestFullscreen) return el.webkitRequestFullscreen();
+  return Promise.reject(new Error('Fullscreen API not supported'));
+}
+function fsExit(){
+  if (document.exitFullscreen) return document.exitFullscreen();
+  if (document.webkitExitFullscreen) return document.webkitExitFullscreen();
+  return Promise.reject(new Error('Fullscreen API not supported'));
+}
+function fsUpdateUI(){
+  const on = !!isFullscreenNow();
+  if (fsBtn) fsBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+  if (fsEnterIcon) fsEnterIcon.style.display = on ? 'none' : 'inline';
+  if (fsExitIcon)  fsExitIcon.style.display  = on ? 'inline' : 'none';
+  updateOrientationClasses();
+}
+async function fsToggle(){
+  try{
+    if (isFullscreenNow()){
+      await fsExit();
+      updateOrientationClasses();
+    } else {
+      // 전체 페이지 기준이 가장 호환성 좋음
+      await fsEnter(document.documentElement);
+      updateOrientationClasses();
+    }
+  } catch (err){
+    console.error(err);
+  } finally {
+    fsUpdateUI();
+  }
+}
+if (fsBtn) fsBtn.addEventListener('click', fsToggle);
+document.addEventListener('fullscreenchange', fsUpdateUI);
+document.addEventListener('webkitfullscreenchange', fsUpdateUI);
+// React to orientation/viewport changes
+window.addEventListener('orientationchange', updateOrientationClasses);
+window.addEventListener('resize', updateOrientationClasses);
+
+/* === Events === */
+// Study / Maker 모드 전환
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const target = btn.dataset.mode;
+    if(target === 'study'){
+      // Study 모드 페이지로 이동: index.html
+      window.location.href = 'index.html';
+    } else {
+      // Maker 모드: 현재 페이지이므로 이동 없이 활성 상태만 표시
+      document.querySelectorAll('.mode-btn').forEach(b =>
+        b.classList.toggle('active', b === btn)
+      );
+    }
+  });
+});
+
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click', ()=>setMode(t.dataset.mode)));
+document.getElementById('startBtn').addEventListener('click', start);
+document.getElementById('stopBtn').addEventListener('click', stop);
+document.getElementById('clearBtn').addEventListener('click', ()=>{ selectedObjs=[null,null,null,null]; renderSelection(); stop(); });
+
+bpm.addEventListener('input', ()=>{ bpmVal.textContent=bpm.value; });
+document.querySelectorAll('button[data-step]').forEach(btn=>btn.addEventListener('click',()=>{
+  let v=parseInt(bpm.value,10)+parseInt(btn.dataset.step,10); v=Math.max(60, Math.min(200,v)); bpm.value=v; bpmVal.textContent=v;
+}));
+
+document.addEventListener('keydown',(e)=>{
+  const tag=(document.activeElement&&document.activeElement.tagName)||'';
+  const typing = ['INPUT','TEXTAREA','SELECT'].includes(tag) || (document.activeElement && document.activeElement.isContentEditable);
+  if(typing) return;
+  // Fullscreen state
+  const fsOn = !!(document.fullscreenElement || document.webkitFullscreenElement);
+  if(e.code==='Space'){ e.preventDefault(); isPlaying?stop():start(); }
+  else if(e.code==='Escape'){
+    e.preventDefault();
+    if (fsOn){
+      // 전체화면 해제만 수행, 슬롯 리셋은 하지 않음
+      try{
+        (document.exitFullscreen && document.exitFullscreen()) || (document.webkitExitFullscreen && document.webkitExitFullscreen());
+      } catch(_){}
+      updateOrientationClasses();
+      return;
+    }
+    selectedObjs=[null,null,null,null]; renderSelection(); stop();
+  }
+  else if(e.code==='Backspace'){ e.preventDefault(); for(let i=3;i>=0;i--){ if(selectedObjs[i]){ selectedObjs[i]=null; break; } } renderSelection(); }
+  else if(e.code==='ArrowLeft'){ let v=Math.max(60, parseInt(bpm.value,10)-5); bpm.value=v; bpmVal.textContent=v; }
+  else if(e.code==='ArrowRight'){ let v=Math.min(200, parseInt(bpm.value,10)+5); bpm.value=v; bpmVal.textContent=v; }
+  else if(e.key==='f' || e.key==='F' || e.code==='KeyF'){ e.preventDefault(); fsToggle(); }
+});
+
+/* === Init === */
+setMode("4");
+window.addEventListener('load', applyVerticalFit);
+window.addEventListener('resize', applyVerticalFit);
+fsUpdateUI && fsUpdateUI();
+updateOrientationClasses();
+placeStepGroup();
+</script>
+</body>
+</html>

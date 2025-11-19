@@ -1,11 +1,9 @@
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>4 8 16 Beat ExerciseNick Drum Beat Maker (Mix, Original Timing) – Glass UI</title>
+<title>4 8 16 Beat Exercise (Large Title)</title>
 <style>
   :root{
     --bg-grad: linear-gradient(135deg, #bfeee3 0%, #ffd8ba 50%, #bcd9f5 100%);
@@ -17,7 +15,8 @@
     --radius: clamp(12px, 1.6vw, 16px);
     --gap: clamp(12px, 2.2vw, 20px);
 
-    --fs-title: clamp(40px, 7vw, 86px);
+    /* 타이틀 폰트 사이즈 1.5배 확대 (기존 32px -> 48px 시작) */
+    --fs-title: clamp(48px, 8vw, 96px);
 
     --line: rgba(100,150,200,0.22);
     --line-strong: rgba(100,150,200,0.35);
@@ -34,25 +33,24 @@
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, 'Apple Color Emoji','Segoe UI Emoji','Segoe UI Symbol';
     -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
-    overflow:hidden; /* 데스크톱/태블릿에서 스케일 시 넘침 방지 */
+    overflow:hidden;
   }
 
-  /* 스테이지: 데스크톱/태블릿에서 가로 중앙 정렬, 세로 상단 정렬 */
   #stage{
     width: 100vw;
     height: 100vh;
-    height: 100dvh;           /* 모바일 주소창 보정 */
+    height: 100dvh;
     display: flex;
-    justify-content: center;  /* 가로 중앙 */
-    align-items: flex-start;  /* 세로 상단 */
+    justify-content: center;
+    align-items: flex-start;
     overflow: hidden;
   }
 
-  /* 스케일 대상 */
   #scaleWrap { transform-origin: top center; }
 
+  /* --- Header (기본: 세로 모드) --- */
   header{
-    padding: clamp(36px, 6vw, 64px) 20px clamp(20px, 4vw, 40px);
+    padding: clamp(24px, 5vw, 48px) 20px clamp(16px, 3vw, 24px);
     text-align:center; position:relative; overflow:hidden; isolation:isolate;
   }
   h1.title{
@@ -62,9 +60,72 @@
     background: linear-gradient(90deg, #ffffff, #cfeae1);
     -webkit-background-clip:text; background-clip:text; color:transparent;
     -webkit-text-fill-color:transparent; -webkit-text-stroke:1px black;
+    line-height: 1.1;
+    
+    /* 세로 모드에서 1줄 강제 및 글자 간격 조정 */
+    white-space: nowrap; 
+    letter-spacing: -1px; 
   }
 
-  main{ max-width: min(1320px, 96vw); margin: clamp(12px,3vw,28px) auto clamp(36px,6vw,56px); padding: 0 clamp(8px,2vw,16px); }
+  main{ 
+    max-width: min(1400px, 96vw); 
+    margin: 0 auto clamp(36px,6vw,56px); 
+    padding: 0 clamp(8px,2vw,16px); 
+  }
+
+  /* --- Layout Split (가로 모드 대응) --- */
+  .layout-split {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap);
+  }
+
+  /* 4:3 비율 이상 (가로 모드) */
+  @media (min-aspect-ratio: 4/3) {
+    .layout-split {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      align-items: stretch;
+      gap: clamp(30px, 4vw, 50px);
+      margin-top: 4vh;
+    }
+    
+    .panel-left {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    /* 가로 모드에서는 타이틀 크기와 줄바꿈 방식 재정의 */
+    header {
+      padding: 0 0 24px 0;
+      text-align: left;
+    }
+    h1.title {
+      font-size: 42px; /* 사이드바에 맞는 적절한 크기로 고정 */
+      white-space: normal; /* 가로 모드 사이드바에서는 필요시 줄바꿈 허용 */
+      line-height: 1.1;
+    }
+
+    .panel-right {
+      padding-top: 8px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .panel-left .controlsWrap {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 24px;
+    }
+    
+    .panel-left #bpmStepGroup {
+      display: grid !important;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-left: 0 !important;
+      width: 100%;
+    }
+  }
 
   .card{
     background: var(--card);
@@ -74,19 +135,10 @@
     box-shadow: 0 12px 28px rgba(100,150,200,.22);
     padding: clamp(18px, 2.8vw, 32px);
   }
-  .section{
-    background: var(--section);
-    border-radius: var(--radius);
-    box-shadow: 0 8px 18px rgba(100,150,200,.18);
-    padding: clamp(12px, 2vw, 20px);
-    border: 1px solid var(--line);
-  }
 
   .row{ display:flex; gap: clamp(8px,1.4vw,12px); align-items:center; flex-wrap: wrap; }
-  /* Center controls in landscape; keep existing behavior in portrait */
   .controlsWrap{ gap: var(--gap); justify-content: space-between; }
-  body.landscape .controlsWrap{ justify-content: center; }
-  .controlsWrap > .row{ align-items: center; }
+  
   .chip{ display:inline-block; font-size: 12px; color: var(--sub); padding: 2px 8px; border-radius: 999px; background: var(--chip-bg); border:1px solid rgba(100,150,200,.18); }
 
   /* Buttons */
@@ -111,16 +163,17 @@
     margin-right:16px;
   }
   .mode-btn{
-    min-height: 48px;           /* 32px * 1.5 */
-    padding: 9px 18px;          /* 6px/12px * 1.5 */
+    min-height: 48px;
+    padding: 9px 18px;
     border-radius: 999px;
     border: 1px solid var(--line);
     background: rgba(255,255,255,0.55);
-    font-size: 20px;            /* ~13px * 1.5 */
+    font-size: 20px;
     font-weight: 600;
     color: var(--sub);
     cursor:pointer;
-    transition: background .2s ease, border-color .2s ease, box-shadow .2s ease, transform .12s ease;
+    transition: all .2s ease;
+    display: flex; align-items: center; justify-content: center;
   }
   .mode-btn:hover{
     background: var(--hover);
@@ -134,72 +187,55 @@
     border-color: var(--line-strong);
   }
 
+  /* 가로 모드에서 버튼 스타일 조정 */
+  @media (min-aspect-ratio: 4/3) {
+    .panel-left #transportRow {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .panel-left .modeToggle {
+      margin-right: 0;
+      width: 100%;
+    }
+    .panel-left .mode-btn { flex: 1; }
+    .panel-left #startBtn, .panel-left #stopBtn { width: 100%; }
+    
+    .panel-left #bpmRow { flex-direction: column; align-items: stretch; }
+    .panel-left input[type=range] { width: 100%; }
+  }
+
   input[type=range]{ width: 220px; accent-color: #6aa9e9; }
   .value{ width:56px; text-align:right; font-feature-settings:'tnum'; font-variant-numeric:tabular-nums; color: var(--sub); }
   .warn{ color:#a15c00; font-size: 12px; margin-left: 6px; }
 
   /* Slots */
-  .selection{
-    display:flex;
-    flex-direction:column;
-    gap: var(--gap);
+  .selection{ display:flex; flex-direction:column; gap: var(--gap); }
+  .selection-row{ display:grid; gap: var(--gap); }
+  .selection-row.row-1{ grid-template-columns: repeat(4, 1fr); }
+  
+  @media (min-aspect-ratio: 4/3) {
+    .selection-row.row-1 { grid-template-columns: 1fr 3fr; }
   }
-  .selection-row{
-    display:grid;
-    gap: var(--gap);
-  }
-  .selection-row.row-1{
-    grid-template-columns: repeat(4, 1fr);
-  }
-  .selection-row.row-2,
-  .selection-row.row-3{
-    grid-template-columns: repeat(4, 1fr);
-  }
+  
+  .selection-row.row-2, .selection-row.row-3{ grid-template-columns: repeat(4, 1fr); }
+  
   .slot{
-    /* min-height: 140px; */
-    aspect-ratio: 16 / 10; /* 일정 비율 유지로 세로 증가 방지 */
+    aspect-ratio: 16 / 10;
     border:1px solid var(--line);
     border-radius: 12px;
     display:flex; align-items:center; justify-content:center; padding:6px;
     background: rgba(255,255,255,.55);
     transition: box-shadow .12s ease, border-color .12s ease, transform .08s ease;
-    overflow: hidden; /* 내부 이미지 튀어나옴 방지 */
+    overflow: hidden;
   }
-  .repeat{
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--sub);
-    opacity: .75;
-    display: flex;
-    align-items: center;
-  }
-  .slotWrap{
-    display:flex;
-    align-items:center;
-    gap:10px;
-  }
-  .slotWrap .repeat{
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--sub);
-    opacity: .75;
-    white-space: nowrap;
-    margin-right: 4px;
-  }
+  .repeat{ font-size: 14px; font-weight: 600; color: var(--sub); opacity: .75; display: flex; align-items: center; }
+  
   .slot.filled{ border-color: var(--line-strong); }
-  .slot img{
-    width:100%;
-    height:100%;
-    object-fit: contain;           /* 가로/세로 모두 비율 유지 */
-    border-radius: 8px; background:#fff; border:1px solid rgba(100,150,200,.26);
-  }
-  .slot.playing{
-    border-color: #6aa9e9 !important;
-    box-shadow: 0 0 0 2px #6aa9e9 inset, 0 0 16px rgba(106,169,233,0.45);
-  }
+  .slot img{ width:100%; height:100%; object-fit: contain; border-radius: 8px; background:#fff; border:1px solid rgba(100,150,200,.26); }
+  .slot.playing{ border-color: #6aa9e9 !important; box-shadow: 0 0 0 2px #6aa9e9 inset, 0 0 16px rgba(106,169,233,0.45); }
 
-  /* Tabs / Tiles */
-  .tabs{ display:flex; gap: var(--gap); margin-top: clamp(12px,1.8vw,16px); }
+  /* Tabs */
+  .tabs{ display:flex; gap: var(--gap); margin-bottom: clamp(12px,1.8vw,16px); }
   .tab{
     flex:1; text-align:center; cursor:pointer;
     padding: 12px; border-radius: 12px;
@@ -211,84 +247,51 @@
   .tab:hover{ background: var(--hover); border-color: var(--line-strong); }
   .tab.active{ background: rgba(255,255,255,.65); box-shadow: 0 0 0 2px rgba(100,150,200,.22) inset; }
 
-  .grid{ display:grid; gap: var(--gap); }
-  .grid.cols-3{ grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .tile{
-    background: rgba(255,255,255,.55);
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    padding: 10px; cursor:pointer;
-    transition: transform .08s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease;
-  }
-  .tile:hover{ transform: translateY(-2px); box-shadow: 0 4px 12px rgba(100,150,200,0.18); background: var(--hover); border-color: var(--line-strong); }
-  .tile .top{ display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
-  .tile .id{ font-weight:800; font-size:14px; }
-  .tile .name{ font-size:12px; color: var(--sub); }
-  .tile img{
-    max-width:100%;
-    height:auto;            /* 세로 화면에서 가로 그림 잘림 방지 */
-    object-fit: contain;
-    border-radius: 10px; background:#fff; border:1px solid rgba(100,150,200,.26);
-  }
-
   .note{ font-size: 12px; color: var(--sub); margin-top: 8px; }
 
-  /* ─────────────────────────────────────────────────────
-     휴대폰(Phone) 전용: pointer:coarse + 화면폭 ≤ 600px
-     태블릿은 데스크톱 규칙 유지
-     ───────────────────────────────────────────────────── */
+  /* Mobile / Portrait Overrides */
   @media (hover: none) and (pointer: coarse) and (max-width: 600px){
-    body{ overflow:auto; }                         /* 스케일 해제 시 스크롤 허용 */
-    #stage{ align-items: flex-start; }             /* 상단 정렬 */
+    body{ overflow:auto; }
+    #stage{ align-items: flex-start; }
     #scaleWrap{ transform: none !important; width: 100% !important; }
-    .selection{
-      display:flex;
-      flex-direction:column;
-      gap: var(--gap);
-    }
-    .selection-row{
-      grid-template-columns: 1fr;                  /* 모바일에서는 슬롯 1열 배치 */
-    }
-    .grid.cols-3{ grid-template-columns: 1fr; }    /* 타일도 1열 */
+    .selection-row{ grid-template-columns: 1fr; }
+    .selection-row.row-1 { grid-template-columns: 1fr !important; }
     header{ padding-top: 28px; }
+    .layout-split { display: flex; flex-direction: column; margin-top: 0; }
+    .panel-left .controlsWrap { flex-direction: row; }
+    .panel-left #bpmStepGroup { display: flex !important; }
   }
  
-  /* ── Portrait / Fullscreen support ───────────────────────────────── */
-  /* iOS/Android safe area when in fullscreen */
   body.fs-on.portrait{
     padding-top: env(safe-area-inset-top);
     padding-bottom: env(safe-area-inset-bottom);
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
   }
-  /* Portrait orientation: keep original columns; only contain images */
   @media (orientation: portrait){
     #stage{ align-items: flex-start; }
-    /* Keep original columns in portrait; no overrides for .selection or .grid.cols-3 */
     #scaleWrap img{ max-width: 100%; height: auto; object-fit: contain; }
+    .layout-split { display: flex; flex-direction: column; grid-template-columns: none; margin-top: 0; }
+    header { text-align: center; padding-bottom: clamp(16px, 3vw, 24px); }
+    .panel-left .controlsWrap { flex-direction: row; align-items: center; }
+    .panel-left #transportRow { flex-direction: row; }
+    .panel-left #bpmRow { flex-direction: row; }
+    .panel-left #bpmStepGroup { display: flex !important; margin-left: 10px !important; }
+    h1.title { font-size: var(--fs-title); white-space: nowrap; }
+    .panel-right { padding-top: 0; }
   }
 
-/* --- Fullscreen button --- */
+/* Fullscreen button */
 .fs-btn {
-  position: fixed;
-  top: 14px;
-  right: 14px;
-  display: inline-grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  border: none;
-  border-radius: 9999px;
-  background: rgba(0,0,0,0.6);
-  color: #fff;
-  cursor: pointer;
-  transition: transform 120ms ease, background 120ms ease, box-shadow 120ms ease;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
-  z-index: 1000;
+  position: fixed; top: 14px; right: 14px;
+  display: inline-grid; place-items: center;
+  width: 44px; height: 44px;
+  border: none; border-radius: 9999px;
+  background: rgba(0,0,0,0.6); color: #fff;
+  cursor: pointer; transition: all 120ms ease;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.25); z-index: 1000;
 }
 .fs-btn:hover { background: rgba(0,0,0,0.75); transform: translateY(-1px); }
-.fs-btn:active { transform: translateY(0); }
-.fs-btn:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(255,255,255,0.5); }
 .icon { width: 22px; height: 22px; display: inline; }
 .icon.exit { display: none; }
 </style>
@@ -296,81 +299,91 @@
 <body>
 <div id="stage">
   <div id="scaleWrap">
-    <header>
-      <h1 class="title">4 8 16 Beat Exercise</h1>
-      <!-- 안내문 2개 삭제됨 -->
-    </header>
-
+    
     <main>
-      <!-- Controls -->
-      <div class="card" style="margin-bottom: var(--gap);">
-        <div class="row controlsWrap">
-          <div class="row" id="transportRow">
-            <div class="modeToggle">
-              <button type="button" class="mode-btn active" data-mode="study">Study</button>
-              <button type="button" class="mode-btn" data-mode="maker">Maker</button>
+      <div class="layout-split">
+        
+        <div class="panel-left">
+          <header>
+            <h1 class="title">4 8 16 Beat Exercise</h1>
+          </header>
+
+          <div class="card controls">
+            <div class="row controlsWrap">
+              
+              <div class="row" id="transportRow" style="width:100%">
+                <div class="modeToggle">
+                  <button type="button" class="mode-btn active" data-mode="study">Study</button>
+                  <button type="button" class="mode-btn" data-mode="maker">Maker</button>
+                </div>
+                <div style="display:flex; gap:8px; width:100%">
+                   <button id="startBtn" class="btn" style="flex:1">Start</button>
+                   <button id="stopBtn" class="btn" style="flex:1">Stop</button>
+                </div>
+              </div>
+
+              <div class="row" id="bpmRow" style="width:100%">
+                <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
+                  <span class="chip">BPM</span>
+                  <div id="bpmVal" class="value">60</div>
+                </div>
+                <input id="bpm" type="range" min="60" max="200" value="60" style="width:100%" />
+                
+                <div class="row" id="bpmStepGroup" style="gap:6px;margin-left:0;width:100%;">
+                  <button type="button" class="btn clear" data-step="-5" style="flex:1">-5</button>
+                  <button type="button" class="btn clear" data-step="5" style="flex:1">+5</button>
+                  <button type="button" class="btn clear" data-step="-1" style="flex:1">-1</button>
+                  <button type="button" class="btn clear" data-step="1" style="flex:1">+1</button>
+                </div>
+                <div id="status" class="warn"></div>
+              </div>
+
             </div>
-            <button id="startBtn" class="btn">Start</button>
-            <button id="stopBtn" class="btn">Stop</button> <!-- Start와 동일 스타일 -->
-          </div>
-          <div class="row" id="bpmRow">
-            <span class="chip">BPM</span>
-            <input id="bpm" type="range" min="60" max="200" value="60" /> <!-- 기본값 60 -->
-            <div id="bpmVal" class="value">60</div>
-            <div class="row" id="bpmStepGroup" style="gap:6px;margin-left:10px">
-              <button type="button" class="btn clear" data-step="-5">-5</button>
-              <button type="button" class="btn clear" data-step="-1">-1</button>
-              <button type="button" class="btn clear" data-step="1">+1</button>
-              <button type="button" class="btn clear" data-step="5">+5</button>
-            </div>
-            <div id="status" class="warn"></div>
           </div>
         </div>
-      </div>
 
-      <!-- Tabs -->
-      <div class="tabs">
-        <div class="tab active" data-mode="4">4 Beat</div>
-        <div class="tab" data-mode="8">8 Beat</div>
-        <div class="tab" data-mode="16">16 Beat</div>
-      </div>
+        <div class="panel-right">
+          <div class="tabs">
+            <div class="tab active" data-mode="4">4 Beat</div>
+            <div class="tab" data-mode="8">8 Beat</div>
+            <div class="tab" data-mode="16">16 Beat</div>
+          </div>
 
-      <!-- Selection -->
-      <div class="card" style="margin-top: var(--gap); margin-bottom: var(--gap);">
-        <div class="selection" id="selection">
-          <div class="selection-row row-1">
-            <div class="slot" id="slot0"><span class="chip">Slot 1</span></div>
-            <div class="repeat">2 times each</div>
-          </div>
-          <div class="selection-row row-2">
-            <div class="slot" id="slot1"><span class="chip">Slot 2</span></div>
-            <div class="slot" id="slot2"><span class="chip">Slot 3</span></div>
-            <div class="slot" id="slot3"><span class="chip">Slot 4</span></div>
-            <div class="slot" id="slot4"><span class="chip">Slot 5</span></div>
-          </div>
-          <div class="selection-row row-3">
-            <div class="slot" id="slot5"><span class="chip">Slot 6</span></div>
-            <div class="slot" id="slot6"><span class="chip">Slot 7</span></div>
-            <div class="slot" id="slot7"><span class="chip">Slot 8</span></div>
-            <div class="slot" id="slot8"><span class="chip">Slot 9</span></div>
+          <div class="card" style="margin-bottom: var(--gap);">
+            <div class="selection" id="selection">
+              <div class="selection-row row-1">
+                <div class="slot" id="slot0"><span class="chip">Slot 1</span></div>
+                <div class="repeat">2 times each</div>
+              </div>
+              <div class="selection-row row-2">
+                <div class="slot" id="slot1"><span class="chip">Slot 2</span></div>
+                <div class="slot" id="slot2"><span class="chip">Slot 3</span></div>
+                <div class="slot" id="slot3"><span class="chip">Slot 4</span></div>
+                <div class="slot" id="slot4"><span class="chip">Slot 5</span></div>
+              </div>
+              <div class="selection-row row-3">
+                <div class="slot" id="slot5"><span class="chip">Slot 6</span></div>
+                <div class="slot" id="slot6"><span class="chip">Slot 7</span></div>
+                <div class="slot" id="slot7"><span class="chip">Slot 8</span></div>
+                <div class="slot" id="slot8"><span class="chip">Slot 9</span></div>
+              </div>
+            </div>
+            <div class="note" id="note"></div>
           </div>
         </div>
-        <div class="note" id="note"></div> <!-- 4 Beat의 노트 문구는 빈값으로 처리 -->
-      </div>
-    </main>
+
+      </div> </main>
 
  </div>
 </div>
 
 <button id="fsBtn" class="fs-btn" aria-label="전체화면 전환 (F)" title="전체화면 전환 (F)" aria-pressed="false">
-  <!-- Enter fullscreen icon -->
   <svg class="icon enter" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
     <path d="M4 10V4h6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
     <path d="M20 14v6h-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
     <path d="M4 4l7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
     <path d="M20 20l-7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
   </svg>
-  <!-- Exit fullscreen icon -->
   <svg class="icon exit" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
     <path d="M10 4H4v6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
     <path d="M14 20h6v-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -416,7 +429,7 @@ const P16 = [
 ];
 
 const MODES = {
-  "4":  { title:"4 Beat",  patterns:P4,  tileSteps:4,  stepType:"eighth",    note:"" }, /* 4모드 노트 삭제 */
+  "4":  { title:"4 Beat",  patterns:P4,  tileSteps:4,  stepType:"eighth",    note:"" },
   "8":  { title:"8 Beat",  patterns:P8,  tileSteps:4,  stepType:"eighth",    note:"" },
   "16": { title:"16 Beat", patterns:P16, tileSteps:8,  stepType:"sixteenth", note:"" }
 };
@@ -437,10 +450,8 @@ function currentPatternObjectById(id){
 let MODE="4";
 let CONF=MODES[MODE];
 let PATTERNS=CONF.patterns.slice();
-// 최대 9개 슬롯까지 사용
 let selectedObjs=[null,null,null,null,null,null,null,null,null];
 let isPlaying=false, nextNoteTime=0, currentStep=0, timer=null;
-// 예비박(4카운트) 및 슬롯 재생 상태
 let isIntroPhase=false, introStep=0;
 let slotOrder=[], slotIndex=0, slotRepeat=0, stepInSlot=0;
 
@@ -458,26 +469,6 @@ const slots=[
 ];
 const statusEl=document.getElementById('status');
 const bpm=document.getElementById('bpm'), bpmVal=document.getElementById('bpmVal');
-const transportRow = document.getElementById('transportRow');
-const bpmRow = document.getElementById('bpmRow');
-const bpmStepGroup = document.getElementById('bpmStepGroup');
-function placeStepGroup(){
-  if(!transportRow || !bpmRow || !bpmStepGroup) return;
-  const portrait = document.body.classList.contains('portrait');
-  if(portrait){
-    // Start/Stop/Clear 우측으로 이동
-    transportRow.appendChild(bpmStepGroup);
-    bpmStepGroup.style.marginLeft = '8px';
-  } else {
-    // BPM 슬라이더 옆 원래 자리로 복귀 (status 앞)
-    bpmStepGroup.style.marginLeft = '10px';
-    if (bpmRow.contains(document.getElementById('status'))){
-      bpmRow.insertBefore(bpmStepGroup, document.getElementById('status'));
-    } else {
-      bpmRow.appendChild(bpmStepGroup);
-    }
-  }
-}
 
 /* === Audio === */
 let audioCtx, masterGain, reverb;
@@ -535,7 +526,6 @@ function stepDurationSec(){
   return 60/(v*4);
 }
 
-
 /* === Slot highlight === */
 function updateSlotHighlight(activeIdx){
   for(let i=0;i<slots.length;i++){
@@ -549,22 +539,20 @@ function clearSlotHighlight(){ slots.forEach(el=>el.classList.remove('playing'))
 function schedule(){
   const ctx = ensureCtx();
   const stepDur = stepDurationSec();
-  const INTRO_STEPS = 16;           // 4박(4비트) * 4스텝(16분음표) = 16스텝
-  const INTRO_CLICK_INTERVAL = 4;   // 4스텝마다 한 번씩 클릭 (4분음표 기준 예비박)
+  const INTRO_STEPS = 16;
+  const INTRO_CLICK_INTERVAL = 4;
 
   while(nextNoteTime < ctx.currentTime + 0.12){
     const t = nextNoteTime;
 
-    // 1) 예비박(4카운트) 구간
+    // 1) 예비박(4카운트)
     if(isIntroPhase){
       if(introStep % INTRO_CLICK_INTERVAL === 0){
-        // 예비 카운트는 하이햇으로 표시
         playHat(t);
       }
       introStep++;
       nextNoteTime += stepDur;
       if(introStep >= INTRO_STEPS){
-        // 예비박이 끝나면 슬롯 재생을 처음부터 시작
         isIntroPhase = false;
         clearSlotHighlight();
         slotIndex = 0;
@@ -574,14 +562,12 @@ function schedule(){
       continue;
     }
 
-    // 2) 본 패턴 재생 (슬롯별, 각 슬롯 2회씩)
+    // 2) 본 패턴
     if(!slotOrder || slotOrder.length === 0){
-      // 재생할 슬롯이 없으면 정지
       stop();
       break;
     }
 
-    // 모든 슬롯을 다 재생했으면: BPM +10 (최대 200) 후 다시 예비박
     if(slotIndex >= slotOrder.length){
       const curBpm = parseInt(bpm.value, 10);
       if(curBpm < 200){
@@ -589,7 +575,6 @@ function schedule(){
         bpm.value = newBpm;
         bpmVal.textContent = newBpm;
       }
-      // 다음 사이클: 예비박(4카운트)부터 다시 시작
       isIntroPhase = true;
       introStep = 0;
       slotIndex = 0;
@@ -602,23 +587,19 @@ function schedule(){
     const idx = slotOrder[slotIndex];
     const tile = selectedObjs[idx];
     if(!tile){
-      // 비어있는 슬롯은 건너뛰기
       slotIndex++;
       slotRepeat = 0;
       stepInSlot = 0;
       continue;
     }
-
     const stepsInTile = tile.TILE_STEPS || 0;
     if(stepsInTile <= 0){
-      // 재생 스텝이 없는 패턴도 건너뛰기
       slotIndex++;
       slotRepeat = 0;
       stepInSlot = 0;
       continue;
     }
 
-    // 현재 슬롯 하이라이트
     updateSlotHighlight(idx);
 
     const s = stepInSlot;
@@ -629,12 +610,10 @@ function schedule(){
     stepInSlot++;
     nextNoteTime += stepDur;
 
-    // 현재 슬롯 패턴이 끝난 경우
     if(stepInSlot >= stepsInTile){
       stepInSlot = 0;
       slotRepeat++;
       if(slotRepeat >= 2){
-        // 현재 슬롯 2회 재생 완료 → 다음 슬롯으로
         slotRepeat = 0;
         slotIndex++;
       }
@@ -648,8 +627,6 @@ function start(){
     statusEl.textContent='Pick at least 1 tile.';
     return;
   }
-
-  // 재생할 슬롯 순서 구성 (비어있지 않은 슬롯만)
   slotOrder = [];
   for(let i=0;i<selectedObjs.length;i++){
     if(selectedObjs[i]) slotOrder.push(i);
@@ -662,7 +639,6 @@ function start(){
   const ctx = ensureCtx();
   ctx.resume();
   isPlaying = true;
-  // 예비박(4카운트)부터 시작
   isIntroPhase = true;
   introStep = 0;
   slotIndex = 0;
@@ -677,7 +653,6 @@ function stop(){
   timer = null;
   isPlaying = false;
   clearSlotHighlight();
-  // 재생 상태 초기화
   isIntroPhase = false;
   introStep = 0;
   slotOrder = [];
@@ -710,7 +685,6 @@ function setMode(m){
   CONF = MODES[MODE];
   PATTERNS = CONF.patterns.slice();
 
-  // 기본값: 현재 모드의 Tile 0~8을 Slot 1~9에 순서대로 채우기
   selectedObjs = [];
   for (let i = 0; i < 9; i++){
     const obj = currentPatternObjectById(i);
@@ -720,35 +694,31 @@ function setMode(m){
   document.querySelectorAll('.tab').forEach(t =>
     t.classList.toggle('active', t.dataset.mode === MODE)
   );
-  document.getElementById('note').textContent = CONF.note; /* 4모드는 빈 문자열 */
+  document.getElementById('note').textContent = CONF.note;
   renderSelection();
 }
 
 /* === Device detection helpers === */
 function isPhoneLike(){
-  // 휴대폰 판별: 미디어쿼리 + 폭 기준
   const mq = window.matchMedia('(hover: none) and (pointer: coarse) and (max-width: 600px)');
   if (mq && typeof mq.matches === 'boolean') return mq.matches;
-  // 보조: UA + 폭
   const ua = navigator.userAgent.toLowerCase();
   const maybeMobile = /android|iphone|ipod|mobile|samsungbrowser/.test(ua);
   return maybeMobile && window.innerWidth <= 600;
 }
 
-/* === Vertical-first fit (데스크톱/태블릿 전용) === */
+/* === Vertical-first fit === */
 function applyVerticalFit(){
   const wrap = document.getElementById('scaleWrap');
   const stage = document.getElementById('stage');
   if(!wrap || !stage) return;
 
-  // 휴대폰에서는 스케일 해제 (CSS 미디어쿼리와 중복 방어)
   if (isPhoneLike()){
     wrap.style.transform = 'none';
     wrap.style.width = '100%';
     return;
   }
 
-  // 데스크톱/태블릿: 세로 우선 + 가로 안전
   wrap.style.transform = 'scale(1)';
   wrap.style.width = 'auto';
 
@@ -765,7 +735,7 @@ function applyVerticalFit(){
     scale = Math.min(scaleH, scaleW);
   }
   wrap.style.transform = `scale(${scale})`;
-  wrap.style.width = `calc(100% / ${scale})`; /* 가운데 정렬 유지 */
+  wrap.style.width = `calc(100% / ${scale})`;
 }
 
 /* === Fullscreen helpers === */
@@ -779,9 +749,7 @@ function updateOrientationClasses(){
   document.body.classList.toggle('portrait', portrait);
   document.body.classList.toggle('landscape', !portrait);
   document.body.classList.toggle('fs-on', !!isFullscreenNow());
-  // Recompute fit when state changes
   applyVerticalFit();
-  placeStepGroup();
 }
 function fsEnter(el){
   if (el.requestFullscreen) return el.requestFullscreen();
@@ -806,7 +774,6 @@ async function fsToggle(){
       await fsExit();
       updateOrientationClasses();
     } else {
-      // 전체 페이지 기준이 가장 호환성 좋음
       await fsEnter(document.documentElement);
       updateOrientationClasses();
     }
@@ -819,20 +786,16 @@ async function fsToggle(){
 if (fsBtn) fsBtn.addEventListener('click', fsToggle);
 document.addEventListener('fullscreenchange', fsUpdateUI);
 document.addEventListener('webkitfullscreenchange', fsUpdateUI);
-// React to orientation/viewport changes
 window.addEventListener('orientationchange', updateOrientationClasses);
 window.addEventListener('resize', updateOrientationClasses);
 
 /* === Events === */
-// Study / Maker 모드 전환
 document.querySelectorAll('.mode-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     const target = btn.dataset.mode;
     if(target === 'maker'){
-      // Maker 모드 페이지로 이동 (같은 폴더 내 Beat Maker.html)
       window.location.href = 'Beat Maker.html';
     } else {
-      // Study 모드: 현재 페이지이므로 이동 없이 활성 상태만 표시
       document.querySelectorAll('.mode-btn').forEach(b =>
         b.classList.toggle('active', b === btn)
       );
@@ -853,13 +816,11 @@ document.addEventListener('keydown',(e)=>{
   const tag=(document.activeElement&&document.activeElement.tagName)||'';
   const typing = ['INPUT','TEXTAREA','SELECT'].includes(tag) || (document.activeElement && document.activeElement.isContentEditable);
   if(typing) return;
-  // Fullscreen state
   const fsOn = !!(document.fullscreenElement || document.webkitFullscreenElement);
   if(e.code==='Space'){ e.preventDefault(); isPlaying?stop():start(); }
   else if(e.code==='Escape'){
     e.preventDefault();
     if (fsOn){
-      // 전체화면 해제만 수행, 슬롯 리셋은 하지 않음
       try{
         (document.exitFullscreen && document.exitFullscreen()) || (document.webkitExitFullscreen && document.webkitExitFullscreen());
       } catch(_){}
@@ -881,7 +842,6 @@ window.addEventListener('load', applyVerticalFit);
 window.addEventListener('resize', applyVerticalFit);
 fsUpdateUI && fsUpdateUI();
 updateOrientationClasses();
-placeStepGroup();
 </script>
 </body>
 </html>

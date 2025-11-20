@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>4 8 16 Beat Exercise (Large Title)</title>
+<title>Nick Drum Integrated</title>
 <style>
   :root{
     --bg-grad: linear-gradient(135deg, #bfeee3 0%, #ffd8ba 50%, #bcd9f5 100%);
@@ -15,7 +15,7 @@
     --radius: clamp(12px, 1.6vw, 16px);
     --gap: clamp(12px, 2.2vw, 20px);
 
-    /* 타이틀 폰트 사이즈 1.5배 확대 (기존 32px -> 48px 시작) */
+    /* 타이틀 폰트 사이즈 */
     --fs-title: clamp(48px, 8vw, 96px);
 
     --line: rgba(100,150,200,0.22);
@@ -36,6 +36,9 @@
     overflow:hidden;
   }
 
+  /* 유틸리티: 뷰 전환용 */
+  .hidden { display: none !important; }
+
   #stage{
     width: 100vw;
     height: 100vh;
@@ -48,7 +51,7 @@
 
   #scaleWrap { transform-origin: top center; }
 
-  /* --- Header (기본: 세로 모드) --- */
+  /* --- Header --- */
   header{
     padding: clamp(24px, 5vw, 48px) 20px clamp(16px, 3vw, 24px);
     text-align:center; position:relative; overflow:hidden; isolation:isolate;
@@ -61,8 +64,6 @@
     -webkit-background-clip:text; background-clip:text; color:transparent;
     -webkit-text-fill-color:transparent; -webkit-text-stroke:1px black;
     line-height: 1.1;
-    
-    /* 세로 모드에서 1줄 강제 및 글자 간격 조정 */
     white-space: nowrap; 
     letter-spacing: -1px; 
   }
@@ -73,14 +74,14 @@
     padding: 0 clamp(8px,2vw,16px); 
   }
 
-  /* --- Layout Split (가로 모드 대응) --- */
+  /* --- Layout Split --- */
   .layout-split {
     display: flex;
     flex-direction: column;
     gap: var(--gap);
   }
 
-  /* 4:3 비율 이상 (가로 모드) */
+  /* 가로 모드 (4:3 이상) */
   @media (min-aspect-ratio: 4/3) {
     .layout-split {
       display: grid;
@@ -95,14 +96,13 @@
       flex-direction: column;
     }
     
-    /* 가로 모드에서는 타이틀 크기와 줄바꿈 방식 재정의 */
     header {
       padding: 0 0 24px 0;
       text-align: left;
     }
     h1.title {
-      font-size: 42px; /* 사이드바에 맞는 적절한 크기로 고정 */
-      white-space: normal; /* 가로 모드 사이드바에서는 필요시 줄바꿈 허용 */
+      font-size: 42px;
+      white-space: normal;
       line-height: 1.1;
     }
 
@@ -110,7 +110,11 @@
       padding-top: 8px;
       display: flex;
       flex-direction: column;
+      /* Maker 모드일 때 스크롤 필요할 수 있음 */
+      overflow-y: auto;
+      max-height: 90vh; 
     }
+    .panel-right::-webkit-scrollbar { display: none; }
 
     .panel-left .controlsWrap {
       flex-direction: column;
@@ -125,6 +129,21 @@
       margin-left: 0 !important;
       width: 100%;
     }
+
+    .panel-left #transportRow {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .panel-left .modeToggle {
+      margin-right: 0;
+      width: 100%;
+      margin-bottom: 8px;
+    }
+    .panel-left .mode-btn { flex: 1; }
+    .panel-left #startBtn, .panel-left #stopBtn, .panel-left #clearBtn { width: 100%; }
+    
+    .panel-left #bpmRow { flex-direction: column; align-items: stretch; }
+    .panel-left input[type=range] { width: 100%; }
   }
 
   .card{
@@ -187,38 +206,59 @@
     border-color: var(--line-strong);
   }
 
-  /* 가로 모드에서 버튼 스타일 조정 */
-  @media (min-aspect-ratio: 4/3) {
-    .panel-left #transportRow {
-      flex-direction: column;
-      align-items: stretch;
-    }
-    .panel-left .modeToggle {
-      margin-right: 0;
-      width: 100%;
-    }
-    .panel-left .mode-btn { flex: 1; }
-    .panel-left #startBtn, .panel-left #stopBtn { width: 100%; }
-    
-    .panel-left #bpmRow { flex-direction: column; align-items: stretch; }
-    .panel-left input[type=range] { width: 100%; }
-  }
-
   input[type=range]{ width: 220px; accent-color: #6aa9e9; }
   .value{ width:56px; text-align:right; font-feature-settings:'tnum'; font-variant-numeric:tabular-nums; color: var(--sub); }
   .warn{ color:#a15c00; font-size: 12px; margin-left: 6px; }
 
-  /* Slots */
-  .selection{ display:flex; flex-direction:column; gap: var(--gap); }
-  .selection-row{ display:grid; gap: var(--gap); }
-  .selection-row.row-1{ grid-template-columns: repeat(4, 1fr); }
-  
+  /* --- Study View Specifics (Slots) --- */
+  .study-selection { display:flex; flex-direction:column; gap: var(--gap); }
+  .study-row { display:grid; gap: var(--gap); }
+  .study-row.row-1 { grid-template-columns: repeat(4, 1fr); }
   @media (min-aspect-ratio: 4/3) {
-    .selection-row.row-1 { grid-template-columns: 1fr 3fr; }
+    .study-row.row-1 { grid-template-columns: 1fr 3fr; }
+  }
+  .study-row.row-2, .study-row.row-3{ grid-template-columns: repeat(4, 1fr); }
+
+  /* --- Maker View Specifics (Slots & Lib) --- */
+  .maker-selection { display:grid; grid-template-columns: repeat(4, 1fr); gap: var(--gap); }
+  @media (min-aspect-ratio: 4/3) {
+     /* Maker view slot aspect ratio tweak */
+    .maker-selection .slot { aspect-ratio: 16/11; } 
   }
   
-  .selection-row.row-2, .selection-row.row-3{ grid-template-columns: repeat(4, 1fr); }
-  
+  h2.lib-title { margin-top:18px; font-size:18px; margin-bottom: 12px; }
+  .grid{ display:grid; gap: var(--gap); }
+  .grid.cols-3{ grid-template-columns: minmax(0, 1fr); } 
+  .tile-row{
+    display:flex;
+    gap: var(--gap);
+    margin-bottom: calc(var(--gap) * 0.45); 
+    justify-content:flex-start;
+    align-items:flex-start;
+  }
+  .tile-row:last-child{ margin-bottom: 0; }
+  .tile{
+    background: rgba(255,255,255,.55);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 8px;
+    cursor:pointer;
+    transition: transform .08s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease;
+    flex: 0 0 calc((100% - 3 * var(--gap)) / 4);
+    max-width: calc((100% - 3 * var(--gap)) / 4);
+  }
+  .tile:hover{
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(100,150,200,0.18);
+    background: var(--hover);
+    border-color: var(--line-strong);
+  }
+  .tile img{
+    width: 100%; height: auto; object-fit: contain;
+    border-radius: 10px; background:#fff; border:1px solid rgba(100,150,200,.26);
+  }
+
+  /* --- Shared Slot Styles --- */
   .slot{
     aspect-ratio: 16 / 10;
     border:1px solid var(--line);
@@ -254,12 +294,16 @@
     body{ overflow:auto; }
     #stage{ align-items: flex-start; }
     #scaleWrap{ transform: none !important; width: 100% !important; }
-    .selection-row{ grid-template-columns: 1fr; }
-    .selection-row.row-1 { grid-template-columns: 1fr !important; }
+    
+    .study-row{ grid-template-columns: 1fr; }
+    .study-row.row-1 { grid-template-columns: 1fr !important; }
+    .maker-selection { grid-template-columns: 1fr; }
+
     header{ padding-top: 28px; }
     .layout-split { display: flex; flex-direction: column; margin-top: 0; }
     .panel-left .controlsWrap { flex-direction: row; }
     .panel-left #bpmStepGroup { display: flex !important; }
+    .panel-left #transportRow { flex-direction: row; }
   }
  
   body.fs-on.portrait{
@@ -278,7 +322,7 @@
     .panel-left #bpmRow { flex-direction: row; }
     .panel-left #bpmStepGroup { display: flex !important; margin-left: 10px !important; }
     h1.title { font-size: var(--fs-title); white-space: nowrap; }
-    .panel-right { padding-top: 0; }
+    .panel-right { padding-top: 0; overflow-y: visible; }
   }
 
 /* Fullscreen button */
@@ -305,7 +349,7 @@
         
         <div class="panel-left">
           <header>
-            <h1 class="title">4 8 16 Beat Exercise</h1>
+            <h1 class="title" id="mainTitle">4 8 16 Beat Exercise</h1>
           </header>
 
           <div class="card controls">
@@ -313,12 +357,13 @@
               
               <div class="row" id="transportRow" style="width:100%">
                 <div class="modeToggle">
-                  <button type="button" class="mode-btn active" data-mode="study">Study</button>
-                  <button type="button" class="mode-btn" data-mode="maker">Maker</button>
+                  <button type="button" class="mode-btn active" id="btnModeStudy">Study</button>
+                  <button type="button" class="mode-btn" id="btnModeMaker">Maker</button>
                 </div>
-                <div style="display:flex; gap:8px; width:100%">
+                <div style="display:flex; gap:8px; width:100%; flex-wrap:wrap;">
                    <button id="startBtn" class="btn" style="flex:1">Start</button>
                    <button id="stopBtn" class="btn" style="flex:1">Stop</button>
+                   <button id="clearBtn" class="btn clear hidden" style="flex:1">Clear</button>
                 </div>
               </div>
 
@@ -343,33 +388,52 @@
         </div>
 
         <div class="panel-right">
+          
           <div class="tabs">
             <div class="tab active" data-mode="4">4 Beat</div>
             <div class="tab" data-mode="8">8 Beat</div>
             <div class="tab" data-mode="16">16 Beat</div>
           </div>
 
-          <div class="card" style="margin-bottom: var(--gap);">
-            <div class="selection" id="selection">
-              <div class="selection-row row-1">
-                <div class="slot" id="slot0"><span class="chip">Slot 1</span></div>
-                <div class="repeat">2 times each</div>
+          <div id="view-study">
+            <div class="card" style="margin-bottom: var(--gap);">
+              <div class="study-selection" id="studySelection">
+                <div class="study-row row-1">
+                  <div class="slot" id="s-slot0"><span class="chip">Slot 1</span></div>
+                  <div class="repeat">2 times each</div>
+                </div>
+                <div class="study-row row-2">
+                  <div class="slot" id="s-slot1"><span class="chip">Slot 2</span></div>
+                  <div class="slot" id="s-slot2"><span class="chip">Slot 3</span></div>
+                  <div class="slot" id="s-slot3"><span class="chip">Slot 4</span></div>
+                  <div class="slot" id="s-slot4"><span class="chip">Slot 5</span></div>
+                </div>
+                <div class="study-row row-3">
+                  <div class="slot" id="s-slot5"><span class="chip">Slot 6</span></div>
+                  <div class="slot" id="s-slot6"><span class="chip">Slot 7</span></div>
+                  <div class="slot" id="s-slot7"><span class="chip">Slot 8</span></div>
+                  <div class="slot" id="s-slot8"><span class="chip">Slot 9</span></div>
+                </div>
               </div>
-              <div class="selection-row row-2">
-                <div class="slot" id="slot1"><span class="chip">Slot 2</span></div>
-                <div class="slot" id="slot2"><span class="chip">Slot 3</span></div>
-                <div class="slot" id="slot3"><span class="chip">Slot 4</span></div>
-                <div class="slot" id="slot4"><span class="chip">Slot 5</span></div>
-              </div>
-              <div class="selection-row row-3">
-                <div class="slot" id="slot5"><span class="chip">Slot 6</span></div>
-                <div class="slot" id="slot6"><span class="chip">Slot 7</span></div>
-                <div class="slot" id="slot7"><span class="chip">Slot 8</span></div>
-                <div class="slot" id="slot8"><span class="chip">Slot 9</span></div>
-              </div>
+              <div class="note" id="studyNote"></div>
             </div>
-            <div class="note" id="note"></div>
           </div>
+
+          <div id="view-maker" class="hidden">
+            <div class="card" style="margin-bottom: var(--gap);">
+              <div class="maker-selection" id="makerSelection">
+                <div class="slot" id="m-slot0"><span class="chip">Slot 1</span></div>
+                <div class="slot" id="m-slot1"><span class="chip">Slot 2</span></div>
+                <div class="slot" id="m-slot2"><span class="chip">Slot 3</span></div>
+                <div class="slot" id="m-slot3"><span class="chip">Slot 4</span></div>
+              </div>
+              <div class="note" id="makerNote"></div>
+            </div>
+
+            <h2 class="lib-title">Tiles</h2>
+            <div class="grid cols-3 card" id="library" style="padding: clamp(12px,2vw,20px);"></div>
+          </div>
+
         </div>
 
       </div> </main>
@@ -393,7 +457,7 @@
 </button>
 
 <script>
-/* ==== Patterns ==== */
+/* ==== Data: Patterns ==== */
 const P4 = [
   { id:0, name:"Pattern 1", img:"Images/4beat/1.png", hh:[0,2], sd:[2], bd:[] },
   { id:1, name:"Pattern 2", img:"Images/4beat/2.png", hh:[0,2], sd:[2], bd:[0] },
@@ -434,43 +498,76 @@ const MODES = {
   "16": { title:"16 Beat", patterns:P16, tileSteps:8,  stepType:"sixteenth", note:"" }
 };
 
+/* ==== Application State ==== */
+let APP_MODE = "study"; // "study" or "maker"
+let BEAT_MODE = "4"; // "4", "8", "16"
+
+let CONF = MODES[BEAT_MODE];
+let PATTERNS = CONF.patterns.slice();
+
+// Study State
+let studySelectedObjs = [null,null,null,null,null,null,null,null,null]; // 9 slots
+let studySlotIndex=0, studySlotRepeat=0, studyStepInSlot=0;
+let isIntroPhase=false, introStep=0;
+
+// Maker State
+let makerSelectedObjs = [null,null,null,null]; // 4 slots
+let makerCurrentStep=0;
+
+// Shared Playback State
+let isPlaying = false;
+let nextNoteTime = 0;
+let timer = null;
+
+/* ==== DOM Elements ==== */
+const titleEl = document.getElementById('mainTitle');
+const bpm = document.getElementById('bpm'), bpmVal = document.getElementById('bpmVal');
+const statusEl = document.getElementById('status');
+
+// Buttons
+const btnModeStudy = document.getElementById('btnModeStudy');
+const btnModeMaker = document.getElementById('btnModeMaker');
+const clearBtn = document.getElementById('clearBtn');
+
+// Views
+const viewStudy = document.getElementById('view-study');
+const viewMaker = document.getElementById('view-maker');
+
+// Study Elements
+const studySlots = [
+  document.getElementById('s-slot0'), document.getElementById('s-slot1'), document.getElementById('s-slot2'),
+  document.getElementById('s-slot3'), document.getElementById('s-slot4'), document.getElementById('s-slot5'),
+  document.getElementById('s-slot6'), document.getElementById('s-slot7'), document.getElementById('s-slot8')
+];
+const studyNoteEl = document.getElementById('studyNote');
+
+// Maker Elements
+const makerSlots = [
+  document.getElementById('m-slot0'), document.getElementById('m-slot1'),
+  document.getElementById('m-slot2'), document.getElementById('m-slot3')
+];
+const makerNoteEl = document.getElementById('makerNote');
+const libEl = document.getElementById('library');
+
+
+/* ==== Logic Helpers ==== */
 function toSixteenthPattern(p, stepType, tileSteps){
   const mul = (stepType==='eighth') ? 2 : 1;
   const map = arr => (arr||[]).map(v => v*mul);
   return { id:p.id, name:p.name, img:p.img, hh:map(p.hh), sd:map(p.sd), bd:map(p.bd), TILE_STEPS: tileSteps * mul };
 }
 function currentPatternObjectById(id){
-  const conf = MODES[MODE];
+  const conf = MODES[BEAT_MODE];
   const src = conf.patterns.find(x=>x.id===id);
   if(!src) return null;
   return toSixteenthPattern(src, conf.stepType, conf.tileSteps);
 }
+function stepDurationSec(){
+  const v=parseInt(bpm.value,10);
+  return 60/(v*4);
+}
 
-/* === State === */
-let MODE="4";
-let CONF=MODES[MODE];
-let PATTERNS=CONF.patterns.slice();
-let selectedObjs=[null,null,null,null,null,null,null,null,null];
-let isPlaying=false, nextNoteTime=0, currentStep=0, timer=null;
-let isIntroPhase=false, introStep=0;
-let slotOrder=[], slotIndex=0, slotRepeat=0, stepInSlot=0;
-
-const noteEl=document.getElementById('note');
-const slots=[
-  document.getElementById('slot0'),
-  document.getElementById('slot1'),
-  document.getElementById('slot2'),
-  document.getElementById('slot3'),
-  document.getElementById('slot4'),
-  document.getElementById('slot5'),
-  document.getElementById('slot6'),
-  document.getElementById('slot7'),
-  document.getElementById('slot8')
-];
-const statusEl=document.getElementById('status');
-const bpm=document.getElementById('bpm'), bpmVal=document.getElementById('bpmVal');
-
-/* === Audio === */
+/* ==== Audio System ==== */
 let audioCtx, masterGain, reverb;
 function ensureCtx(){
   if(!audioCtx){
@@ -520,154 +617,134 @@ function playHat(time){
   src.start(time); src.stop(time+0.08);
 }
 
-/* === Timing === */
-function stepDurationSec(){
-  const v=parseInt(bpm.value,10);
-  return 60/(v*4);
-}
+/* ==== Scheduler Logic ==== */
 
-/* === Slot highlight === */
-function updateSlotHighlight(activeIdx){
-  for(let i=0;i<slots.length;i++){
-    const el=slots[i]; if(!el) continue;
-    if(i===activeIdx) el.classList.add('playing'); else el.classList.remove('playing');
-  }
-}
-function clearSlotHighlight(){ slots.forEach(el=>el.classList.remove('playing')); }
-
-/* === Scheduler === */
-function schedule(){
-  const ctx = ensureCtx();
-  const stepDur = stepDurationSec();
+// STUDY MODE Scheduler
+function scheduleStudy(ctx, stepDur){
   const INTRO_STEPS = 16;
   const INTRO_CLICK_INTERVAL = 4;
 
   while(nextNoteTime < ctx.currentTime + 0.12){
     const t = nextNoteTime;
 
-    // 1) 예비박(4카운트)
+    // 1) 예비박
     if(isIntroPhase){
-      if(introStep % INTRO_CLICK_INTERVAL === 0){
-        playHat(t);
-      }
-      introStep++;
-      nextNoteTime += stepDur;
+      if(introStep % INTRO_CLICK_INTERVAL === 0){ playHat(t); }
+      introStep++; nextNoteTime += stepDur;
       if(introStep >= INTRO_STEPS){
         isIntroPhase = false;
-        clearSlotHighlight();
-        slotIndex = 0;
-        slotRepeat = 0;
-        stepInSlot = 0;
+        clearSlotHighlights();
+        studySlotIndex=0; studySlotRepeat=0; studyStepInSlot=0;
       }
       continue;
     }
 
-    // 2) 본 패턴
-    if(!slotOrder || slotOrder.length === 0){
-      stop();
-      break;
-    }
+    // 2) Main Patterns
+    const slotOrder = []; 
+    for(let i=0; i<studySelectedObjs.length; i++){ if(studySelectedObjs[i]) slotOrder.push(i); }
+    
+    if(slotOrder.length === 0){ stop(); break; }
 
-    if(slotIndex >= slotOrder.length){
+    if(studySlotIndex >= slotOrder.length){
       const curBpm = parseInt(bpm.value, 10);
       if(curBpm < 200){
         const newBpm = Math.min(200, curBpm + 10);
-        bpm.value = newBpm;
-        bpmVal.textContent = newBpm;
+        bpm.value = newBpm; bpmVal.textContent = newBpm;
       }
-      isIntroPhase = true;
-      introStep = 0;
-      slotIndex = 0;
-      slotRepeat = 0;
-      stepInSlot = 0;
-      clearSlotHighlight();
+      isIntroPhase = true; introStep = 0;
+      studySlotIndex = 0; studySlotRepeat = 0; studyStepInSlot = 0;
+      clearSlotHighlights();
       continue;
     }
 
-    const idx = slotOrder[slotIndex];
-    const tile = selectedObjs[idx];
+    const idx = slotOrder[studySlotIndex];
+    const tile = studySelectedObjs[idx];
     if(!tile){
-      slotIndex++;
-      slotRepeat = 0;
-      stepInSlot = 0;
-      continue;
+      studySlotIndex++; studySlotRepeat=0; studyStepInSlot=0; continue;
     }
     const stepsInTile = tile.TILE_STEPS || 0;
-    if(stepsInTile <= 0){
-      slotIndex++;
-      slotRepeat = 0;
-      stepInSlot = 0;
-      continue;
-    }
+    
+    updateStudyHighlight(idx);
 
-    updateSlotHighlight(idx);
-
-    const s = stepInSlot;
+    const s = studyStepInSlot;
     if(tile.hh && tile.hh.includes(s)) playHat(t);
     if(tile.sd && tile.sd.includes(s)) playSnare(t);
     if(tile.bd && tile.bd.includes(s)) playKick(t);
 
-    stepInSlot++;
-    nextNoteTime += stepDur;
-
-    if(stepInSlot >= stepsInTile){
-      stepInSlot = 0;
-      slotRepeat++;
-      if(slotRepeat >= 2){
-        slotRepeat = 0;
-        slotIndex++;
-      }
+    studyStepInSlot++; nextNoteTime += stepDur;
+    if(studyStepInSlot >= stepsInTile){
+      studyStepInSlot = 0; studySlotRepeat++;
+      if(studySlotRepeat >= 2){ studySlotRepeat=0; studySlotIndex++; }
     }
   }
 }
 
-/* === Transport === */
-function start(){
-  if(selectedObjs.every(o=>!o)){
-    statusEl.textContent='Pick at least 1 tile.';
-    return;
-  }
-  slotOrder = [];
-  for(let i=0;i<selectedObjs.length;i++){
-    if(selectedObjs[i]) slotOrder.push(i);
-  }
-  if(slotOrder.length === 0){
-    statusEl.textContent='Pick at least 1 tile.';
-    return;
-  }
+// MAKER MODE Scheduler
+function buildMakerCombined(){
+  const chosen = makerSelectedObjs.filter(o=>o);
+  if(chosen.length===0) return null;
+  const total = chosen.reduce((acc,o)=>acc+o.TILE_STEPS, 0);
+  const out = { total, hh:Array(total).fill(0), sd:Array(total).fill(0), bd:Array(total).fill(0), tileBounds:[] };
+  let base=0;
+  chosen.forEach(o=>{
+    o.hh.forEach(ix=>{ if(base+ix<total) out.hh[base+ix]=1; });
+    o.sd.forEach(ix=>{ if(base+ix<total) out.sd[base+ix]=1; });
+    o.bd.forEach(ix=>{ if(base+ix<total) out.bd[base+ix]=1; });
+    base += o.TILE_STEPS;
+    out.tileBounds.push(base);
+  });
+  return out;
+}
 
+function scheduleMaker(ctx, stepDur){
+  const P = buildMakerCombined(); 
+  if(!P) return; // Should technically stop if nothing selected, but we'll just idle
+  const total = P.total;
+
+  while(nextNoteTime < ctx.currentTime + 0.12){
+    const step = makerCurrentStep % total;
+    // Highlight determination
+    let tileIdx = 0; 
+    while(tileIdx < P.tileBounds.length && step >= P.tileBounds[tileIdx]) tileIdx++;
+    updateMakerHighlight(tileIdx);
+
+    const t=nextNoteTime;
+    if(P.hh[step]) playHat(t);
+    if(P.sd[step]) playSnare(t);
+    if(P.bd[step]) playKick(t);
+    nextNoteTime += stepDur; 
+    makerCurrentStep = (makerCurrentStep + 1) % total;
+  }
+}
+
+// Main Scheduler
+function schedule(){
   const ctx = ensureCtx();
-  ctx.resume();
-  isPlaying = true;
-  isIntroPhase = true;
-  introStep = 0;
-  slotIndex = 0;
-  slotRepeat = 0;
-  stepInSlot = 0;
-  nextNoteTime = ctx.currentTime + 0.05;
-  timer = setInterval(schedule,25);
-  statusEl.textContent = '';
-}
-function stop(){
-  if(timer) clearInterval(timer);
-  timer = null;
-  isPlaying = false;
-  clearSlotHighlight();
-  isIntroPhase = false;
-  introStep = 0;
-  slotOrder = [];
-  slotIndex = 0;
-  slotRepeat = 0;
-  stepInSlot = 0;
+  const stepDur = stepDurationSec();
+  if(APP_MODE === "study") scheduleStudy(ctx, stepDur);
+  else scheduleMaker(ctx, stepDur);
 }
 
-/* === UI rendering === */
-function renderSelection(){
-  clearSlotHighlight();
-  for(let i=0;i<slots.length;i++){
-    const el=slots[i]; if(!el) continue;
+/* ==== Render & UI ==== */
+function clearSlotHighlights(){
+  studySlots.forEach(el=>el.classList.remove('playing'));
+  makerSlots.forEach(el=>el.classList.remove('playing'));
+}
+function updateStudyHighlight(idx){
+  clearSlotHighlights();
+  if(studySlots[idx]) studySlots[idx].classList.add('playing');
+}
+function updateMakerHighlight(idx){
+  clearSlotHighlights();
+  if(makerSlots[idx]) makerSlots[idx].classList.add('playing');
+}
+
+// Render Study Slots
+function renderStudySelection(){
+  for(let i=0; i<studySlots.length; i++){
+    const el=studySlots[i]; if(!el) continue;
     el.innerHTML='';
-    const obj=selectedObjs[i];
+    const obj=studySelectedObjs[i];
     if(!obj){
       el.classList.remove('filled');
       el.innerHTML=`<span class="chip">Slot ${i+1}</span>`;
@@ -678,27 +755,156 @@ function renderSelection(){
   }
 }
 
-/* === Mode switching === */
-function setMode(m){
-  if(isPlaying) stop();
-  MODE = m;
-  CONF = MODES[MODE];
-  PATTERNS = CONF.patterns.slice();
-
-  selectedObjs = [];
-  for (let i = 0; i < 9; i++){
-    const obj = currentPatternObjectById(i);
-    selectedObjs.push(obj || null);
+// Render Maker Slots
+function renderMakerSelection(){
+  for(let i=0; i<makerSlots.length; i++){
+    const el=makerSlots[i]; el.innerHTML='';
+    const obj=makerSelectedObjs[i];
+    if(!obj){ 
+      el.classList.remove('filled'); el.innerHTML=`<span class="chip">Slot ${i+1}</span>`; 
+    } else { 
+      el.classList.add('filled'); el.innerHTML=`<img src="${obj.img}" alt="Pattern ${obj.id}">`; 
+    }
   }
-
-  document.querySelectorAll('.tab').forEach(t =>
-    t.classList.toggle('active', t.dataset.mode === MODE)
-  );
-  document.getElementById('note').textContent = CONF.note;
-  renderSelection();
 }
 
-/* === Device detection helpers === */
+// Render Maker Library
+function renderMakerLibrary(){
+  libEl.innerHTML = '';
+  const groups = [[0], [1, 2, 3, 4], [5, 6, 7, 8]];
+  groups.forEach(indices => {
+    const row = document.createElement('div'); row.className = 'tile-row';
+    indices.forEach(i => {
+      const p = PATTERNS[i]; if (!p) return;
+      const card = document.createElement('div'); card.className = 'tile';
+      card.innerHTML = `<img src="${p.img}" alt="${p.name}">`;
+      card.addEventListener('click', () => {
+        const idx = makerSelectedObjs.findIndex(x => !x);
+        if (idx === -1) return;
+        const obj = currentPatternObjectById(p.id);
+        if (!obj) return;
+        makerSelectedObjs[idx] = obj;
+        renderMakerSelection();
+      });
+      row.appendChild(card);
+    });
+    libEl.appendChild(row);
+  });
+}
+
+/* ==== Control Flow ==== */
+function start(){
+  // check current mode reqs
+  if(APP_MODE === 'study'){
+     const activeCount = studySelectedObjs.filter(o=>o).length;
+     if(activeCount===0){ statusEl.textContent='No patterns loaded.'; return; }
+     // Init Study State
+     isIntroPhase = true; introStep = 0;
+     studySlotIndex = 0; studySlotRepeat = 0; studyStepInSlot = 0;
+  } else {
+     const activeCount = makerSelectedObjs.filter(o=>o).length;
+     if(activeCount===0){ statusEl.textContent='Pick at least 1 tile.'; return; }
+     // Init Maker State
+     makerCurrentStep = 0;
+  }
+  
+  const ctx = ensureCtx(); ctx.resume();
+  isPlaying = true;
+  nextNoteTime = ctx.currentTime + 0.05;
+  timer = setInterval(schedule, 25);
+  statusEl.textContent = '';
+}
+
+function stop(){
+  if(timer) clearInterval(timer); timer = null;
+  isPlaying = false;
+  clearSlotHighlights();
+  
+  // Reset ephemeral states
+  if(APP_MODE === 'study'){
+    isIntroPhase = false; introStep = 0;
+    studySlotIndex = 0; studySlotRepeat = 0; studyStepInSlot = 0;
+  } else {
+    makerCurrentStep = 0;
+  }
+}
+
+/* ==== App Mode Switching (Study vs Maker) ==== */
+function switchAppMode(mode){
+  if(isPlaying) stop();
+  APP_MODE = mode;
+  
+  // UI Toggle
+  if(mode === 'study'){
+    btnModeStudy.classList.add('active');
+    btnModeMaker.classList.remove('active');
+    viewStudy.classList.remove('hidden');
+    viewMaker.classList.add('hidden');
+    titleEl.textContent = "4 8 16 Beat Exercise";
+    clearBtn.classList.add('hidden'); // Hide Clear in Study
+    
+    // Ensure study patterns are loaded for current beat
+    updateStudyPatterns(); 
+  } else {
+    btnModeMaker.classList.add('active');
+    btnModeStudy.classList.remove('active');
+    viewMaker.classList.remove('hidden');
+    viewStudy.classList.add('hidden');
+    titleEl.textContent = "Nick Drum Beat Maker";
+    clearBtn.classList.remove('hidden'); // Show Clear in Maker
+    
+    renderMakerLibrary();
+    renderMakerSelection();
+  }
+  statusEl.textContent = '';
+  
+  // *** 중요: 모드 전환 후 컨텐츠 높이가 달라지므로 스케일 다시 계산 ***
+  setTimeout(applyVerticalFit, 0);
+}
+
+/* ==== Beat Mode Switching (4, 8, 16) ==== */
+function setBeatMode(m){
+  if(isPlaying) stop();
+  BEAT_MODE = m;
+  CONF = MODES[BEAT_MODE];
+  PATTERNS = CONF.patterns.slice();
+  
+  // Update Tabs
+  document.querySelectorAll('.tab').forEach(t => 
+    t.classList.toggle('active', t.dataset.mode === BEAT_MODE)
+  );
+  
+  // Update Note Text
+  studyNoteEl.textContent = CONF.note;
+  makerNoteEl.textContent = CONF.note;
+
+  if(APP_MODE === 'study'){
+    updateStudyPatterns();
+  } else {
+    // In maker mode, refresh library. Keep selected slots (user might want to clear manually)
+    // But technically if we switch 4->16, the "id" logic holds, but the content changes.
+    renderMakerLibrary();
+    // Optional: could clear maker slots, but original code preserved state conceptually
+    // Let's re-fetch the objects to ensure TILE_STEPS match new mode
+    for(let i=0; i<4; i++){
+      if(makerSelectedObjs[i]){
+         makerSelectedObjs[i] = currentPatternObjectById(makerSelectedObjs[i].id);
+      }
+    }
+    renderMakerSelection();
+  }
+}
+
+function updateStudyPatterns(){
+  // Auto-fill logic from index.html
+  for (let i = 0; i < 9; i++){
+    studySelectedObjs[i] = currentPatternObjectById(i) || null;
+  }
+  renderStudySelection();
+}
+
+
+/* ==== Device & Layout Helpers ==== */
 function isPhoneLike(){
   const mq = window.matchMedia('(hover: none) and (pointer: coarse) and (max-width: 600px)');
   if (mq && typeof mq.matches === 'boolean') return mq.matches;
@@ -707,7 +913,6 @@ function isPhoneLike(){
   return maybeMobile && window.innerWidth <= 600;
 }
 
-/* === Vertical-first fit === */
 function applyVerticalFit(){
   const wrap = document.getElementById('scaleWrap');
   const stage = document.getElementById('stage');
@@ -738,7 +943,7 @@ function applyVerticalFit(){
   wrap.style.width = `calc(100% / ${scale})`;
 }
 
-/* === Fullscreen helpers === */
+/* ==== Fullscreen ==== */
 const fsBtn = document.getElementById('fsBtn');
 const fsEnterIcon = fsBtn ? fsBtn.querySelector('.icon.enter') : null;
 const fsExitIcon  = fsBtn ? fsBtn.querySelector('.icon.exit')  : null;
@@ -751,37 +956,24 @@ function updateOrientationClasses(){
   document.body.classList.toggle('fs-on', !!isFullscreenNow());
   applyVerticalFit();
 }
-function fsEnter(el){
-  if (el.requestFullscreen) return el.requestFullscreen();
-  if (el.webkitRequestFullscreen) return el.webkitRequestFullscreen();
-  return Promise.reject(new Error('Fullscreen API not supported'));
-}
-function fsExit(){
-  if (document.exitFullscreen) return document.exitFullscreen();
-  if (document.webkitExitFullscreen) return document.webkitExitFullscreen();
-  return Promise.reject(new Error('Fullscreen API not supported'));
+async function fsToggle(){
+  try{
+    if (isFullscreenNow()){
+      if (document.exitFullscreen) await document.exitFullscreen();
+      else if (document.webkitExitFullscreen) await document.webkitExitFullscreen();
+    } else {
+      const el = document.documentElement;
+      if (el.requestFullscreen) await el.requestFullscreen();
+      else if (el.webkitRequestFullscreen) await el.webkitRequestFullscreen();
+    }
+  } catch (err){ console.error(err); }
+  finally { fsUpdateUI(); updateOrientationClasses(); }
 }
 function fsUpdateUI(){
   const on = !!isFullscreenNow();
   if (fsBtn) fsBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
   if (fsEnterIcon) fsEnterIcon.style.display = on ? 'none' : 'inline';
   if (fsExitIcon)  fsExitIcon.style.display  = on ? 'inline' : 'none';
-  updateOrientationClasses();
-}
-async function fsToggle(){
-  try{
-    if (isFullscreenNow()){
-      await fsExit();
-      updateOrientationClasses();
-    } else {
-      await fsEnter(document.documentElement);
-      updateOrientationClasses();
-    }
-  } catch (err){
-    console.error(err);
-  } finally {
-    fsUpdateUI();
-  }
 }
 if (fsBtn) fsBtn.addEventListener('click', fsToggle);
 document.addEventListener('fullscreenchange', fsUpdateUI);
@@ -789,59 +981,66 @@ document.addEventListener('webkitfullscreenchange', fsUpdateUI);
 window.addEventListener('orientationchange', updateOrientationClasses);
 window.addEventListener('resize', updateOrientationClasses);
 
-/* === Events === */
-document.querySelectorAll('.mode-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const target = btn.dataset.mode;
-    if(target === 'maker'){
-      window.location.href = 'Beat Maker.html';
-    } else {
-      document.querySelectorAll('.mode-btn').forEach(b =>
-        b.classList.toggle('active', b === btn)
-      );
-    }
-  });
-});
+/* ==== Event Listeners ==== */
+btnModeStudy.addEventListener('click', () => switchAppMode('study'));
+btnModeMaker.addEventListener('click', () => switchAppMode('maker'));
 
-document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click', ()=>setMode(t.dataset.mode)));
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click', ()=>setBeatMode(t.dataset.mode)));
 document.getElementById('startBtn').addEventListener('click', start);
 document.getElementById('stopBtn').addEventListener('click', stop);
+clearBtn.addEventListener('click', ()=>{ 
+  makerSelectedObjs=[null,null,null,null]; 
+  renderMakerSelection(); 
+  stop(); 
+});
 
 bpm.addEventListener('input', ()=>{ bpmVal.textContent=bpm.value; });
 document.querySelectorAll('button[data-step]').forEach(btn=>btn.addEventListener('click',()=>{
-  let v=parseInt(bpm.value,10)+parseInt(btn.dataset.step,10); v=Math.max(60, Math.min(200,v)); bpm.value=v; bpmVal.textContent=v;
+  let v=parseInt(bpm.value,10)+parseInt(btn.dataset.step,10); 
+  v=Math.max(60, Math.min(200,v)); bpm.value=v; bpmVal.textContent=v;
 }));
 
 document.addEventListener('keydown',(e)=>{
   const tag=(document.activeElement&&document.activeElement.tagName)||'';
   const typing = ['INPUT','TEXTAREA','SELECT'].includes(tag) || (document.activeElement && document.activeElement.isContentEditable);
   if(typing) return;
-  const fsOn = !!(document.fullscreenElement || document.webkitFullscreenElement);
+  const fsOn = !!isFullscreenNow();
+
   if(e.code==='Space'){ e.preventDefault(); isPlaying?stop():start(); }
   else if(e.code==='Escape'){
     e.preventDefault();
-    if (fsOn){
-      try{
-        (document.exitFullscreen && document.exitFullscreen()) || (document.webkitExitFullscreen && document.webkitExitFullscreen());
-      } catch(_){}
-      updateOrientationClasses();
-      return;
-    }
-    selectedObjs=[null,null,null,null,null,null,null,null,null];
-    renderSelection();
+    if (fsOn){ fsToggle(); return; }
     stop();
+    if(APP_MODE==='maker'){ makerSelectedObjs=[null,null,null,null]; renderMakerSelection(); }
+    // Study mode usually doesn't clear on Esc in original, just stops? Original cleared.
+    // Replicating original behavior:
+    if(APP_MODE==='study'){
+      studySelectedObjs=[null,null,null,null,null,null,null,null,null];
+      renderStudySelection();
+    }
+  }
+  else if(e.code==='Backspace'){ 
+    if(APP_MODE === 'maker'){
+      e.preventDefault(); 
+      for(let i=3;i>=0;i--){ if(makerSelectedObjs[i]){ makerSelectedObjs[i]=null; break; } } 
+      renderMakerSelection(); 
+    }
   }
   else if(e.code==='ArrowLeft'){ let v=Math.max(60, parseInt(bpm.value,10)-5); bpm.value=v; bpmVal.textContent=v; }
   else if(e.code==='ArrowRight'){ let v=Math.min(200, parseInt(bpm.value,10)+5); bpm.value=v; bpmVal.textContent=v; }
   else if(e.key==='f' || e.key==='F' || e.code==='KeyF'){ e.preventDefault(); fsToggle(); }
 });
 
-/* === Init === */
-setMode("4");
+/* ==== Init ==== */
+// Initial Mode Setup
+setBeatMode("4"); // This sets CONF and PATTERNS
+switchAppMode("study"); // Starts in Study mode
+
 window.addEventListener('load', applyVerticalFit);
 window.addEventListener('resize', applyVerticalFit);
-fsUpdateUI && fsUpdateUI();
+fsUpdateUI();
 updateOrientationClasses();
+
 </script>
 </body>
 </html>
